@@ -9,7 +9,14 @@ import { Login } from "@/components/Login";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { Camera, Image as ImageIcon, Info, Users, Settings } from "lucide-react";
+import {
+  Camera,
+  Image as ImageIcon,
+  Info,
+  Users,
+  Settings,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -36,40 +43,40 @@ export default function Home() {
         <div className="flex p-1 bg-white/5 rounded-full border border-white/10 backdrop-blur-sm overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab("intro")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "intro"
+            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${
+              activeTab === "intro"
                 ? "bg-white/10 text-white shadow-lg"
                 : "text-white/40 hover:text-white/70"
-              }`}
+            }`}
           >
             <Info size={18} />
             <span className="font-medium whitespace-nowrap">About</span>
           </button>
-          <button
-            onClick={() => setActiveTab("social")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "social"
-                ? "bg-white/10 text-white shadow-lg"
-                : "text-white/40 hover:text-white/70"
-              }`}
+          <Link
+            href="/sns"
+            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 text-white/40 hover:text-white/70`}
           >
             <Users size={18} />
-            <span className="font-medium whitespace-nowrap">Community</span>
-          </button>
+            <span className="font-medium whitespace-nowrap">SNS</span>
+          </Link>
           <button
             onClick={() => setActiveTab("upload")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "upload"
+            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${
+              activeTab === "upload"
                 ? "bg-white/10 text-white shadow-lg"
                 : "text-white/40 hover:text-white/70"
-              }`}
+            }`}
           >
             <ImageIcon size={18} />
             <span className="font-medium whitespace-nowrap">Photo Upload</span>
           </button>
           <button
             onClick={() => setActiveTab("camera")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "camera"
+            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${
+              activeTab === "camera"
                 ? "bg-white/10 text-white shadow-lg"
                 : "text-white/40 hover:text-white/70"
-              }`}
+            }`}
           >
             <Camera size={18} />
             <span className="font-medium whitespace-nowrap">
@@ -78,27 +85,25 @@ export default function Home() {
           </button>
           <button
             onClick={() => setActiveTab("login")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "login"
+            className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${
+              activeTab === "login"
                 ? "bg-white/10 text-white shadow-lg"
                 : "text-white/40 hover:text-white/70"
-              }`}
+            }`}
           >
-            <span className="font-medium whitespace-nowrap">
-              Login
-            </span>
+            <span className="font-medium whitespace-nowrap">Login</span>
           </button>
           {user && (
             <button
               onClick={() => setActiveTab("settings")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${activeTab === "settings"
+              className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 ${
+                activeTab === "settings"
                   ? "bg-white/10 text-white shadow-lg"
                   : "text-white/40 hover:text-white/70"
-                }`}
+              }`}
             >
               <Settings size={18} />
-              <span className="font-medium whitespace-nowrap">
-                Settings
-              </span>
+              <span className="font-medium whitespace-nowrap">Settings</span>
             </button>
           )}
         </div>
@@ -108,8 +113,8 @@ export default function Home() {
           {activeTab === "intro" && (
             <Introduction onStart={() => setActiveTab("upload")} />
           )}
-          {activeTab === "social" && (
-            loading ? (
+          {activeTab === "social" &&
+            (loading ? (
               <div className="text-white/70">Checking auth...</div>
             ) : user ? (
               <SocialTab />
@@ -120,13 +125,12 @@ export default function Home() {
                 </p>
                 <Login />
               </div>
-            )
-          )}
+            ))}
           {activeTab === "upload" && <UploadMode />}
           {activeTab === "camera" && <RealTimeFire />}
           {activeTab === "login" && <Login />}
-          {activeTab === "settings" && (
-            loading ? (
+          {activeTab === "settings" &&
+            (loading ? (
               <div className="text-white/70">Loading profile...</div>
             ) : user ? (
               <ProfileSettings profile={profile} onSave={updateProfile} />
@@ -137,8 +141,7 @@ export default function Home() {
                 </p>
                 <Login />
               </div>
-            )
-          )}
+            ))}
         </div>
       </div>
     </main>
