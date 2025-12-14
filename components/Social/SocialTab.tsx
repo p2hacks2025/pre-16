@@ -54,8 +54,7 @@ export function SocialTab() {
               photoURL: data.photoURL ?? undefined,
               content: data.content ?? "",
               image: data.image ?? undefined,
-              timestamp:
-                (data.timestamp?.toMillis?.() as number) ?? Date.now(),
+              timestamp: (data.timestamp?.toMillis?.() as number) ?? Date.now(),
               likes: data.likes ?? 0,
             };
           });
@@ -88,9 +87,7 @@ export function SocialTab() {
   };
 
   return (
-    <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <CreatePost onPost={handleNewPost} userProfile={profile} />
-
+    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="space-y-4">
         {!ready && (
           <div className="text-white/50 text-sm">Loading posts...</div>

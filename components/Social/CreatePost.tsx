@@ -47,9 +47,10 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
 
       // 2) Firestore に投稿ドキュメントを追加
       const author = userProfile?.displayName || "Dragon Master";
-      const avatar = userProfile?.avatarGradient || "from-orange-500 to-red-600";
+      const avatar =
+        userProfile?.avatarGradient || "from-orange-500 to-red-600";
       const photoURL = userProfile?.photoURL || null;
-      
+
       const docRef = await addDoc(collection(db, "posts"), {
         author,
         avatar,
@@ -82,7 +83,8 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
     }
   };
 
-  const avatarGradient = userProfile?.avatarGradient || "from-orange-500 to-red-600";
+  const avatarGradient =
+    userProfile?.avatarGradient || "from-orange-500 to-red-600";
   const userPhotoURL = userProfile?.photoURL;
 
   return (
@@ -98,7 +100,9 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
             className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
           />
         ) : (
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${avatarGradient} flex-shrink-0`} />
+          <div
+            className={`w-10 h-10 rounded-full bg-gradient-to-r ${avatarGradient} flex-shrink-0`}
+          />
         )}
         <div className="flex-1 space-y-4">
           <textarea
@@ -144,7 +148,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
             <button
               type="submit"
               disabled={submitting || (!content.trim() && !image)}
-              className="px-4 py-2 bg-orange-600 text-white rounded-full font-bold text-sm hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+              className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-bold text-sm hover:from-orange-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg hover:shadow-orange-500/25"
             >
               <Send size={16} />
               {submitting ? "Posting..." : "Post"}
