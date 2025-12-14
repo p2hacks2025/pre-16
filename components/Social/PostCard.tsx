@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, getDoc, setDoc, deleteDoc, increment, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, getDoc, setDoc, deleteDoc, increment, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 
 export interface PostData {
