@@ -54,12 +54,6 @@ export default function Home() {
           </button>
           <Link
             href="/sns"
-            onClick={(e) => {
-              if (!user && !loading) {
-                e.preventDefault();
-                setActiveTab("login");
-              }
-            }}
             className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all duration-300 text-white/40 hover:text-white/70`}
           >
             <Users size={18} />
