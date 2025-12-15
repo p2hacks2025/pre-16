@@ -25,6 +25,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 export interface PostData {
   id: string;
@@ -53,6 +54,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { profile } = useProfile(user);
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
@@ -170,9 +172,9 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
     try {
       const repliesRef = collection(db, "posts", post.id, "replies");
       await addDoc(repliesRef, {
-        author: user.displayName || "Anonymous",
+        author: profile?.displayName || user.displayName || "Anonymous",
         uid: user.uid,
-        photoURL: user.photoURL || null,
+        photoURL: profile?.photoURL || user.photoURL || null,
         content: replyText.trim(),
         timestamp: serverTimestamp(),
       });
@@ -335,10 +337,10 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           {/* Reply input */}
           {showReplyBox && (
             <div className="mt-3 flex items-end gap-2">
-              {user?.photoURL ? (
+              {profile?.photoURL || user?.photoURL ? (
                 <img
-                  src={user.photoURL}
-                  alt={user.displayName ?? "You"}
+                  src={profile?.photoURL || user?.photoURL || ""}
+                  alt={profile?.displayName || user?.displayName || "You"}
                   className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (

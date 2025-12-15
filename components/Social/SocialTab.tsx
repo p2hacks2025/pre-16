@@ -15,6 +15,7 @@ const SEED_POSTS: PostData[] = [
   {
     id: "seed-1",
     author: "Hanabi Official",
+    authorId: "seed-author-1",
     avatar: "from-blue-500 to-purple-600",
     content:
       "Welcome to the Hanabi Community! 🎆\nShare your best fire-breathing moments here.",
@@ -24,6 +25,7 @@ const SEED_POSTS: PostData[] = [
   {
     id: "seed-2",
     author: "Fire Starter",
+    authorId: "seed-author-2",
     avatar: "from-green-400 to-emerald-600",
     content:
       "This new AR feature is insane! My cat looks like a dragon now. 🐉",
