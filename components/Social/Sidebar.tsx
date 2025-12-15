@@ -10,7 +10,7 @@ interface SidebarProps {
 
 export function Sidebar({ onPostClick }: SidebarProps) {
   const navItems = [
-    { icon: Home, label: "夜空 (Night Sky)", href: "/sns", active: true },
+    { icon: Home, label: "夜空", href: "/sns", active: true },
     { icon: Search, label: "火種を探す", href: "#" },
     { icon: Mail, label: "チャット", href: "#" },
   ];
