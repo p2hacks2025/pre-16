@@ -1,25 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Sidebar } from "@/components/Social/Sidebar";
 import { Widgets } from "@/components/Social/Widgets";
 import { SocialTab } from "@/components/Social/SocialTab";
 import { PostModal } from "@/components/Social/PostModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { FireworksOverlay, FireworksHandle } from "@/components/FireworksOverlay";
+import { PostData } from "@/components/Social/PostCard";
 
 export default function CommunityPage() {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const { user } = useAuth();
   const { profile } = useProfile(user);
+  const fireworksRef = useRef<FireworksHandle | null>(null);
 
-  const handlePost = () => {
-    // Optionally trigger a refresh or just rely on Firestore listener in SocialTab
-    console.log("Post created");
+  const handlePost = (post: PostData) => {
+    console.log("Post created", post.id);
+    fireworksRef.current?.celebrate();
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex justify-center">
+    <div className="relative min-h-screen bg-black text-white flex justify-center overflow-hidden">
+      <FireworksOverlay ref={fireworksRef} />
       <PostModal
         isOpen={isPostModalOpen}
         onClose={() => setPostModalOpen(false)}
@@ -27,7 +31,7 @@ export default function CommunityPage() {
         onPost={handlePost}
       />
 
-      <div className="flex w-full">
+      <div className="flex w-full relative z-10">
         {/* Left Sidebar */}
         <Sidebar onPostClick={() => setPostModalOpen(true)} />
 
