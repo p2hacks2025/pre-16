@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { Home, Search, Mail, MoreHorizontal } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 interface SidebarProps {
   onPostClick?: () => void;

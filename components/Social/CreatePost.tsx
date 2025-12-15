@@ -67,7 +67,6 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
       const newPost: PostData = {
         id: docRef.id,
         author,
-        authorId: user?.uid || undefined, // Local state can use undefined if interface allows, or null
         avatar,
         photoURL: photoURL || undefined,
         content: content.trim(),
