@@ -192,11 +192,11 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           <img
             src={post.photoURL}
             alt={post.author}
-            className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
+            className="w-10 h-10 rounded-full shrink-0 object-cover"
           />
         ) : (
           <div
-            className={`w-10 h-10 rounded-full flex-shrink-0 bg-gradient-to-tr ${post.avatar} flex items-center justify-center text-white font-bold text-sm`}
+            className={`w-10 h-10 rounded-full shrink-0 bg-linear-to-tr ${post.avatar} flex items-center justify-center text-white font-bold text-sm`}
           >
             {post.author[0]}
           </div>
@@ -244,7 +244,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           </div>
 
           {/* Content */}
-          <p className="text-white/90 whitespace-pre-wrap break-words">
+          <p className="text-white/90 whitespace-pre-wrap wrap-break-word">
             {post.content}
           </p>
 
@@ -254,7 +254,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
               <img
                 src={post.image}
                 alt="Post content"
-                className="w-full h-auto max-h-[400px] object-cover"
+                className="w-full h-auto max-h-100 object-cover"
                 loading="lazy"
               />
             </div>
@@ -378,7 +378,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
                       {r.author[0] || "?"}
                     </div>
                   )}

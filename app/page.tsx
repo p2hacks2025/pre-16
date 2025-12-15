@@ -29,7 +29,7 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#0a0a0a] text-white selection:bg-orange-500/30">
       <div className="max-w-4xl w-full flex flex-col items-center gap-12">
         <header className="text-center space-y-4">
-          <h1 className="text-6xl font-black tracking-tighter bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
+          <h1 className="text-6xl font-black tracking-tighter bg-linear-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
             HANABI
           </h1>
           {activeTab !== "intro" && (
@@ -109,7 +109,7 @@ export default function Home() {
         </div>
 
         {/* Content Area */}
-        <div className="w-full flex justify-center min-h-[400px]">
+        <div className="w-full flex justify-center min-h-100">
           {activeTab === "intro" && (
             <Introduction onStart={() => setActiveTab("upload")} />
           )}

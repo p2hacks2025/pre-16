@@ -34,7 +34,7 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-black text-white flex justify-center">
       {/* Login Prompt for Guests */}
       {!user && (
-        <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="fixed top-4 right-4 z-50 bg-linear-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2 flex-1">
               <p className="font-semibold text-white">さらに楽しむにはログイン</p>
@@ -90,7 +90,7 @@ export default function CommunityPage() {
           <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
             <div className="flex w-full">
               <div className="flex-1 hover:bg-white/10 transition-colors flex items-center justify-center gap-2 py-4 cursor-pointer relative">
-                <div className="w-2 h-2 bg-gradient-to-tr from-orange-500 to-red-600 rotate-45" />
+                <div className="w-2 h-2 bg-linear-to-tr from-orange-500 to-red-600 rotate-45" />
                 <span className="font-bold text-white">おすすめ</span>
               </div>
               <div className="flex-1 hover:bg-white/10 transition-colors text-center py-4 text-white/50 font-medium cursor-pointer">
