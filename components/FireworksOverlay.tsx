@@ -8,175 +8,273 @@ import {
   useRef,
 } from "react";
 
-type Particle = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  hue: number;
-  trail: { x: number; y: number }[];
-};
-
 export type FireworksHandle = {
   celebrate: () => void;
 };
 
-// Realistic fireworks overlay with trails and color gradients
-export const FireworksOverlay = forwardRef<FireworksHandle>(
-  function FireworksOverlay(_, ref) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const particlesRef = useRef<Particle[]>([]);
-    const rafRef = useRef<number | null>(null);
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+// Performance-tuned fireworks overlay using object pooling + pre-rendered sprites
+export const FireworksOverlay = forwardRef<FireworksHandle>(function Overlay(
+  _,
+  ref
+) {
+  // Canvas/state refs
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
-    const celebrate = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+  // DPR + size
+  const dprRef = useRef(1);
+  const widthRef = useRef(0);
+  const heightRef = useRef(0);
 
-      const burstX = canvas.width * 0.5; // center
-      const burstY = canvas.height * 0.3; // upper center
-      
-      // Random color palette: blue, purple, green, white
-      const colorPalettes = [
-        [200, 240, 280], // blues to cyan
-        [260, 280, 320], // purples to magenta
-        [140, 160, 180], // greens to cyan
-        [40, 60, 200],   // warm to cool white
-      ];
-      const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+  // Animation
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
 
-      const sparkCount = 300 + Math.floor(Math.random() * 100); // 300-400 particles
-      for (let i = 0; i < sparkCount; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 8 + Math.random() * 12; // high initial velocity
-        const hue = palette[Math.floor(Math.random() * palette.length)];
-        
-        particlesRef.current.push({
-          x: burstX,
-          y: burstY,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          life: 1,
-          maxLife: 1,
-          size: 2 + Math.random() * 3,
-          hue: hue + (Math.random() - 0.5) * 30,
-          trail: [],
-        });
+  // FPS-based quality scaling (0.6 - 1.0)
+  const framesRef = useRef(0);
+  const accRef = useRef(0);
+  const qualityRef = useRef(1);
+
+  // Sprites (palettes x levels)
+  const spritesRef = useRef<HTMLCanvasElement[][]>([]);
+  const LEVELS = 12; // life→white shift levels (higher quality fades)
+  // Hues for blue, purple, green, white(null)
+  const PALETTES: (number | null)[] = [200, 280, 160, null];
+
+  // Particle pool (struct of arrays)
+  const MAX = 800; // pool capacity
+  const alive = useRef<Uint8Array | null>(null);
+  const px = useRef<Float32Array | null>(null);
+  const py = useRef<Float32Array | null>(null);
+  const vx = useRef<Float32Array | null>(null);
+  const vy = useRef<Float32Array | null>(null);
+  const life = useRef<Float32Array | null>(null); // 1→0
+  const decay = useRef<Float32Array | null>(null); // life decay per second
+  const size = useRef<Float32Array | null>(null); // radius in px
+  const pal = useRef<Uint8Array | null>(null); // palette index 0..3
+
+  // Free list for pool reuse
+  const freeList = useRef<Int32Array | null>(null);
+  const freeTop = useRef<number>(0);
+
+  // Utility: init pool arrays
+  const initPool = () => {
+    alive.current = new Uint8Array(MAX);
+    px.current = new Float32Array(MAX);
+    py.current = new Float32Array(MAX);
+    vx.current = new Float32Array(MAX);
+    vy.current = new Float32Array(MAX);
+    life.current = new Float32Array(MAX);
+    decay.current = new Float32Array(MAX);
+    size.current = new Float32Array(MAX);
+    pal.current = new Uint8Array(MAX);
+    freeList.current = new Int32Array(MAX);
+    freeTop.current = MAX;
+    for (let i = 0; i < MAX; i++) freeList.current![i] = i;
+  };
+
+  // Utility: take/free slot
+  const alloc = () => {
+    if (freeTop.current <= 0) return -1;
+    return freeList.current![--freeTop.current];
+  };
+  const release = (id: number) => {
+    alive.current![id] = 0;
+    freeList.current![freeTop.current++] = id;
+  };
+
+  // Create tinted radial sprite
+  const makeSprite = (
+    hue: number | null,
+    level: number,
+    dpr: number
+  ): HTMLCanvasElement => {
+    const sizePx = Math.floor(64 * dpr);
+    const c = document.createElement("canvas");
+    c.width = sizePx;
+    c.height = sizePx;
+    const g = c.getContext("2d")!;
+    const cx = sizePx / 2;
+    const cy = sizePx / 2;
+    const r = sizePx / 2;
+
+    const t = level / Math.max(1, LEVELS - 1);
+    // Saturation 80%→35%, Lightness 60%→85%
+    const sat = hue === null ? 0 : Math.max(0, 80 - 45 * t);
+    const lit = hue === null ? 95 : Math.min(90, 60 + 25 * t);
+    const h = hue ?? 0;
+
+    const grad = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, `hsla(${h}, ${sat}%, ${Math.min(100, lit + 10)}%, 1)`);
+    grad.addColorStop(0.35, `hsla(${h}, ${sat}%, ${lit}%, 0.85)`);
+    grad.addColorStop(0.7, `hsla(${h}, ${sat}%, ${lit - 10}%, 0.35)`);
+    grad.addColorStop(1, `hsla(${h}, ${sat}%, ${lit - 10}%, 0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, sizePx, sizePx);
+    return c;
+  };
+
+  const buildSprites = (dpr: number) => {
+    const sets: HTMLCanvasElement[][] = [];
+    for (let p = 0; p < PALETTES.length; p++) {
+      const hue = PALETTES[p];
+      const levels: HTMLCanvasElement[] = [];
+      for (let l = 0; l < LEVELS; l++) levels.push(makeSprite(hue, l, dpr));
+      sets.push(levels);
+    }
+    spritesRef.current = sets;
+  };
+
+  // Resize + DPR clamp
+  const doResize = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    dprRef.current = dpr;
+    const w = Math.floor(window.innerWidth * dpr);
+    const h = Math.floor(window.innerHeight * dpr);
+    widthRef.current = w;
+    heightRef.current = h;
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    // Rebuild sprites for new DPR
+    buildSprites(dpr);
+  }, []);
+
+  // Spawn burst (returns spawned count)
+  const spawnBurst = useCallback((cx: number, cy: number, count: number) => {
+    const w = widthRef.current;
+    const baseSpeed = 400; // px/s - maximum spread for edge-pushing
+    for (let i = 0; i < count; i++) {
+      const id = alloc();
+      if (id < 0) break;
+      const ang = Math.random() * Math.PI * 2;
+      const spd = baseSpeed * (0.9 + Math.random() * 1.1); // 0.9x-2.0x
+      px.current![id] = cx;
+      py.current![id] = cy;
+      vx.current![id] = Math.cos(ang) * spd;
+      vy.current![id] = Math.sin(ang) * spd;
+      life.current![id] = 1;
+      decay.current![id] = 0.3 + Math.random() * 0.4; // per sec - slower decay for lingering
+      // radius scaled by quality + DPR - smaller for delicate appearance
+      const q = qualityRef.current;
+      size.current![id] = (8 + Math.random() * 12) * (0.8 + 0.4 * q) * dprRef.current;
+      pal.current![id] = (Math.random() * PALETTES.length) | 0;
+      alive.current![id] = 1;
+    }
+  }, []);
+
+  // Public API: celebrate
+  const celebrate = useCallback(() => {
+    const w = widthRef.current;
+    const h = heightRef.current;
+    if (!w || !h) return;
+    // Burst at upper center with slight horizontal randomness
+    const cx = w * 0.5 + (Math.random() - 0.5) * (w * 0.2);
+    const cy = h * 0.32 + Math.random() * (h * 0.05);
+    // Particle target ~350 scaled by quality for maximum burst volume
+    const target = Math.floor(350 * qualityRef.current);
+    spawnBurst(cx, cy, target);
+  }, [spawnBurst]);
+
+  useImperativeHandle(ref, () => ({ celebrate }));
+
+  // Main loop
+  useEffect(() => {
+    initPool();
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctxRef.current = ctx;
+    doResize();
+
+    let last = (lastTimeRef.current = performance.now());
+
+    const loop = () => {
+      const ctx = ctxRef.current!;
+      const now = performance.now();
+      let dt = (now - last) / 1000;
+      last = now;
+      // Clamp dt (tab switching etc.)
+      if (dt > 0.05) dt = 0.05;
+
+      // FPS measure
+      framesRef.current++;
+      accRef.current += dt;
+      if (accRef.current >= 0.5) {
+        const fps = framesRef.current / accRef.current;
+        framesRef.current = 0;
+        accRef.current = 0;
+        if (fps < 55) qualityRef.current = Math.max(0.5, qualityRef.current - 0.08);
+        else if (fps > 58)
+          qualityRef.current = Math.min(1.0, qualityRef.current + 0.03);
       }
-    }, []);
 
-    useImperativeHandle(ref, () => ({ celebrate }));
+      // Motion blur (trail) over black - subtle for cleaner look
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      ctx.fillRect(0, 0, widthRef.current, heightRef.current);
 
-    useEffect(() => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!canvas || !ctx) return;
-      ctxRef.current = ctx;
+      // Update + draw particles
+      ctx.globalCompositeOperation = "lighter";
 
-      const resize = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      };
+      const damp = Math.pow(0.985, dt * 60); // per-sec damping
+      const grav = 380 * dt; // px/s^2 - slower fall for extended view
 
-      const render = () => {
-        if (!ctxRef.current || !canvasRef.current) return;
-        const ctx = ctxRef.current;
-        const canvas = canvasRef.current;
+      const sets = spritesRef.current;
+      for (let i = 0; i < MAX; i++) {
+        if (!alive.current![i]) continue;
 
-        // Fade previous frame for trail effect (motion blur)
-        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // physics
+        vx.current![i] *= damp;
+        vy.current![i] = vy.current![i] * damp + grav;
+        px.current![i] += vx.current![i] * dt;
+        py.current![i] += vy.current![i] * dt;
+        life.current![i] -= decay.current![i] * dt;
 
-        for (let i = particlesRef.current.length - 1; i >= 0; i--) {
-          const p = particlesRef.current[i];
-          
-          // Physics: velocity decay and gravity
-          p.vx *= 0.98; // air resistance
-          p.vy = p.vy * 0.98 + 0.15; // gravity
-          p.x += p.vx;
-          p.y += p.vy;
-          
-          // Trail tracking - store position history
-          p.trail.push({ x: p.x, y: p.y });
-          if (p.trail.length > 8) p.trail.shift();
-          
-          // Life decay
-          p.life -= 0.008 + Math.random() * 0.007;
-
-          if (p.life <= 0) {
-            particlesRef.current.splice(i, 1);
-            continue;
-          }
-
-          // Color gradient over time: start bright, shift hue, fade to white
-          const lifeRatio = p.life / p.maxLife;
-          const brightness = 50 + lifeRatio * 30; // 50-80%
-          const saturation = lifeRatio > 0.5 ? 80 : 80 - (0.5 - lifeRatio) * 100; // desaturate at end
-          const currentHue = p.hue + (1 - lifeRatio) * 20; // slight hue shift
-
-          ctx.globalCompositeOperation = "lighter";
-
-          // Draw trail (long exposure effect)
-          if (p.trail.length > 1) {
-            for (let t = 0; t < p.trail.length - 1; t++) {
-              const alpha = (t / p.trail.length) * p.life * 0.6;
-              const trailSize = p.size * (0.3 + (t / p.trail.length) * 0.7);
-              
-              ctx.globalAlpha = alpha;
-              ctx.fillStyle = `hsl(${currentHue}, ${saturation}%, ${brightness}%)`;
-              ctx.shadowBlur = 15 + lifeRatio * 20;
-              ctx.shadowColor = ctx.fillStyle;
-              
-              ctx.beginPath();
-              ctx.arc(p.trail[t].x, p.trail[t].y, trailSize, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-
-          // Draw main particle (brightest point)
-          ctx.globalAlpha = p.life;
-          ctx.fillStyle = `hsl(${currentHue}, ${saturation}%, ${brightness + 10}%)`;
-          ctx.shadowBlur = 25 + lifeRatio * 30;
-          ctx.shadowColor = ctx.fillStyle;
-
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Extra bright core glow
-          ctx.globalAlpha = p.life * 0.5;
-          ctx.shadowBlur = 40;
-          ctx.fillStyle = `hsl(${currentHue}, ${saturation}%, ${brightness + 20}%)`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 1.8, 0, Math.PI * 2);
-          ctx.fill();
+        if (life.current![i] <= 0) {
+          release(i);
+          continue;
         }
 
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = "source-over";
-        ctx.shadowBlur = 0;
-        rafRef.current = requestAnimationFrame(render);
-      };
+        // choose sprite by palette + level from life
+        const pidx = pal.current![i];
+        const lv = Math.min(
+          LEVELS - 1,
+          Math.max(0, Math.floor((1 - life.current![i]) * LEVELS))
+        );
+        const sprite = sets[pidx][lv];
+        const r = size.current![i];
+        const x = px.current![i];
+        const y = py.current![i];
+        // Modulate alpha by life for fade-out
+        ctx.globalAlpha = Math.max(0.05, life.current![i]);
+        ctx.drawImage(sprite, x - r, y - r, r * 2, r * 2);
+      }
 
-      resize();
-      window.addEventListener("resize", resize);
-      rafRef.current = requestAnimationFrame(render);
+      ctx.globalAlpha = 1;
+      rafRef.current = requestAnimationFrame(loop);
+    };
 
-      return () => {
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        window.removeEventListener("resize", resize);
-        ctxRef.current = null;
-      };
-    }, []);
+    const onResize = () => doResize();
+    window.addEventListener("resize", onResize);
+    rafRef.current = requestAnimationFrame(loop);
 
-    return (
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none fixed inset-0 z-40 bg-black mix-blend-screen"
-      />
-    );
-  }
-);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", onResize);
+      ctxRef.current = null;
+    };
+  }, [doResize]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none fixed inset-0 z-40 mix-blend-screen"
+    />
+  );
+});
+ 
