@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 export interface PostData {
   id: string;
   author: string;
+  authorId: string;
   avatar: string; // Gradient classes or placeholder
   photoURL?: string; // User's custom avatar image URL
   content: string;
@@ -148,7 +149,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
     const q = query(repliesRef, orderBy("timestamp", "asc"));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((d) => {
-        const data = d.data() as ReplyData;
+        const data = d.data();
         return {
           id: d.id,
           author: data.author ?? "",
