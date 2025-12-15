@@ -83,8 +83,12 @@ export function SocialTab() {
   }, []);
 
   const handleNewPost = (newPost: PostData) => {
-    // 楽観的更新：投稿直後に先頭に追加
-    setPosts((prev) => [newPost, ...prev]);
+    // 楽観的更新：投稿直後に先頭に追加（重複チェック）
+    setPosts((prev) => {
+      const exists = prev.some(p => p.id === newPost.id);
+      if (exists) return prev;
+      return [newPost, ...prev];
+    });
   };
 
   return (
