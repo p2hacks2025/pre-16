@@ -67,7 +67,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
       const newPost: PostData = {
         id: docRef.id,
         author,
-        authorId: user?.uid || undefined, // Local state can use undefined if interface allows, or null
+        authorId: user?.uid || "",
         avatar,
         photoURL: photoURL || undefined,
         content: content.trim(),
@@ -101,11 +101,11 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
           <img
             src={userPhotoURL}
             alt="Your avatar"
-            className="w-10 h-10 rounded-full flex-shrink-0 object-cover"
+            className="w-10 h-10 rounded-full shrink-0 object-cover"
           />
         ) : (
           <div
-            className={`w-10 h-10 rounded-full bg-gradient-to-r ${avatarGradient} flex-shrink-0`}
+            className={`w-10 h-10 rounded-full bg-linear-to-r ${avatarGradient} shrink-0`}
           />
         )}
         <div className="flex-1 space-y-4">
@@ -113,7 +113,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What's burning? 🔥"
-            className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-white/40 text-lg resize-none min-h-[80px]"
+            className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-white/40 text-lg resize-none min-h-20"
           />
 
           {image && (
@@ -152,7 +152,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
             <button
               type="submit"
               disabled={submitting || (!content.trim() && !image)}
-              className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-bold text-sm hover:from-orange-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg hover:shadow-orange-500/25"
+              className="px-6 py-2 bg-linear-to-r from-orange-500 to-red-600 text-white rounded-full font-bold text-sm hover:from-orange-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg hover:shadow-orange-500/25"
             >
               <Send size={16} />
               {submitting ? "Posting..." : "Post"}

@@ -114,7 +114,7 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
                 className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
               />
             ) : (
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xl`}>
+              <div className={`w-16 h-16 rounded-full bg-liner-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xl`}>
                 {displayName[0]?.toUpperCase() || "?"}
               </div>
             )}
@@ -164,7 +164,7 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
               />
             ) : (
               <div
-                className={`w-12 h-12 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold`}
+                className={`w-12 h-12 rounded-full bg-liner-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold`}
               >
                 {displayName[0]?.toUpperCase() || "?"}
               </div>

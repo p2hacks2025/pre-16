@@ -35,7 +35,7 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-black text-white flex justify-center">
       {/* Login Prompt for Guests */}
       {!user && (
-        <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="fixed top-4 right-4 z-50 bg-linear-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2 flex-1">
               <p className="font-semibold text-white">さらに楽しむにはログイン</p>
