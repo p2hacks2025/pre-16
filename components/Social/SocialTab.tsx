@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
+import { FireworksOverlay } from "./FireworksOverlay";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -43,6 +44,7 @@ export function SocialTab({ tab = "everyone" }: { tab?: "everyone" | "solo" }) {
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
   const [ready, setReady] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
 
   // Subscribe to Firestore in realtime
   useEffect(() => {
@@ -103,15 +105,20 @@ export function SocialTab({ tab = "everyone" }: { tab?: "everyone" | "solo" }) {
   }, [tab, user?.uid]);
 
   const handleNewPost = (newPost: PostData) => {
-    // 楽観的更新：投稿直後に先頭に追加
-    setPosts((prev) => [newPost, ...prev]);
+    // Firestoreのリアルタイムリスナーが更新を検知するため、
+    // ここでの手動更新（setPosts）は不要です。
+    // 重複キーエラーを防ぐため、楽観的更新は行いません。
+    console.log("handleNewPost called, showing fireworks", newPost?.id);
+    setShowFireworks(true);
   };
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {user && (
-        <CreatePost onPost={handleNewPost} userProfile={profile} />
-      )}
+      <FireworksOverlay
+        isActive={showFireworks}
+        onComplete={() => setShowFireworks(false)}
+      />
+      {user && <CreatePost onPost={handleNewPost} userProfile={profile} />}
       <div className="space-y-4">
         {!ready && (
           <div className="text-white/50 text-sm">Loading posts...</div>
