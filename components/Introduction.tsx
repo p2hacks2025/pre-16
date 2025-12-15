@@ -16,7 +16,9 @@ export function Introduction({ onStart }: IntroductionProps) {
           <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full -z-10 animate-pulse"></div>
         </div>
 
-        <h2 className="text-4xl font-bold">Welcome to HANABI</h2>
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-600 bg-clip-text text-transparent inline-block">
+          Welcome to HANABI
+        </h2>
         <p className="text-xl text-white/70 max-w-2xl leading-relaxed">
           The ultimate AI-powered playground where you can breathe fire. Upload
           a photo or turn on your camera to unleash the dragon within.

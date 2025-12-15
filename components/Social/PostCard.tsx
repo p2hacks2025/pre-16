@@ -188,7 +188,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
   };
 
   return (
-    <div className="w-full bg-white/5 border border-white/10 rounded-xl overflow-visible hover:bg-white/[0.07] transition-colors relative">
+    <div className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group">
       <div className="p-4 flex gap-4">
         {/* Avatar */}
         {post.photoURL ? (

@@ -12,6 +12,7 @@ import { X } from "lucide-react";
 
 export default function CommunityPage() {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const { user, loading } = useAuth();
   const { profile } = useProfile(user);
@@ -89,19 +90,57 @@ export default function CommunityPage() {
         <main className="flex-1 w-full border-x border-white/20 min-h-screen">
           <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
             <div className="flex w-full">
-              <div className="flex-1 hover:bg-white/10 transition-colors flex items-center justify-center gap-2 py-4 cursor-pointer relative">
-                <div className="w-2 h-2 bg-linear-to-tr from-orange-500 to-red-600 rotate-45" />
-                <span className="font-bold text-white">おすすめ</span>
+              <div
+                onClick={() => setActiveTab("everyone")}
+                className={`flex-1 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2 py-4 cursor-pointer relative group ${
+                  activeTab === "everyone"
+                    ? ""
+                    : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {activeTab === "everyone" && (
+                  <div className="w-2 h-2 bg-gradient-to-tr from-orange-500 to-red-600 rotate-45 shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+                )}
+                <span
+                  className={`font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
+                    activeTab === "everyone" ? "text-white" : ""
+                  }`}
+                >
+                  みんな
+                </span>
+                {activeTab === "everyone" && (
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-red-600 shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
+                )}
               </div>
-              <div className="flex-1 hover:bg-white/10 transition-colors text-center py-4 text-white/50 font-medium cursor-pointer">
-                フレンド
+
+              <div
+                onClick={() => setActiveTab("solo")}
+                className={`flex-1 hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2 py-4 cursor-pointer relative group ${
+                  activeTab === "solo"
+                    ? ""
+                    : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {activeTab === "solo" && (
+                  <div className="w-2 h-2 bg-gradient-to-tr from-cyan-400 to-blue-500 rotate-45 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+                )}
+                <span
+                  className={`font-medium drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${
+                    activeTab === "solo" ? "text-white font-bold" : ""
+                  }`}
+                >
+                  おひとり
+                </span>
+                {activeTab === "solo" && (
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-blue-600 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                )}
               </div>
             </div>
           </div>
 
           <div className="pb-20">
             <div className="p-4">
-              <SocialTab />
+              <SocialTab tab={activeTab} />
             </div>
           </div>
         </main>

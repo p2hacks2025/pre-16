@@ -4,7 +4,13 @@ import React, { useEffect, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -34,7 +40,7 @@ const SEED_POSTS: PostData[] = [
   },
 ];
 
-export function SocialTab() {
+export function SocialTab({ tab = "everyone" }: { tab?: "everyone" | "solo" }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
@@ -43,7 +49,21 @@ export function SocialTab() {
   // Subscribe to Firestore in realtime
   useEffect(() => {
     try {
-      const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+      let q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+
+      if (tab === "solo") {
+        if (!user) {
+          setPosts([]);
+          setReady(true);
+          return;
+        }
+        q = query(
+          collection(db, "posts"),
+          where("authorId", "==", user.uid),
+          orderBy("timestamp", "desc")
+        );
+      }
+
       const unsub = onSnapshot(
         q,
         (snap) => {
@@ -82,7 +102,7 @@ export function SocialTab() {
       console.error(e);
       setReady(true);
     }
-  }, []);
+  }, [tab, user?.uid]);
 
   const handleNewPost = (newPost: PostData) => {
     // 楽観的更新：投稿直後に先頭に追加（重複チェック）
