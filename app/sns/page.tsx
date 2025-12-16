@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { X } from "lucide-react";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -18,16 +17,12 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
 
-  const searchParams = useSearchParams();
-  const isSettingsOpen = searchParams.get("tab") === "settings";
-  const router = useRouter();
-
   const handleCloseSettings = () => {
-    // Remove tab param by replacing (to avoid history stack buildup if desired, or push to root /sns)
-    router.replace("/sns");
+    setIsSettingsOpen(false);
   };
 
   // Show loading state while checking auth

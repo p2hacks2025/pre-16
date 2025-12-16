@@ -128,12 +128,12 @@ export function SocialTab({
             if (expired) {
               if (!cleanedRef.current.has(d.id)) {
                 cleanedRef.current.add(d.id);
-                deletePostAssets({
-                  attachment: data.attachment,
-                  image: data.image,
-                }).catch((err) =>
-                  console.warn("Failed to delete expired post attachment", err)
-                );
+                const url = data.attachment?.url ?? data.image;
+                if (url) {
+                  deleteAttachmentFromStorage(url).catch((err) =>
+                    console.warn("Failed to delete expired post attachment", err)
+                  );
+                }
                 deleteDoc(d.ref).catch((err) =>
                   console.error("Failed to auto-delete expired post", err)
                 );

@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "sigma-icon-476001-g8"
+  },
+  "targets": {
+    "sigma-icon-476001-g8": {
+      "hosting": {
+        "hanabi-app": [
+          "hanabi-app"
+        ]
+      }
+    }
+  }
+}

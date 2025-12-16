@@ -383,4 +383,19 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+# Firebase cache and logs
+.firebase/
+firebase-debug.log
+*-debug.log
+firestore-debug.log
+ui-debug.log
+firebasehosting-debug.log
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
 # End of https://www.toptal.com/developers/gitignore/api/python,unity,node
