@@ -129,15 +129,6 @@ export function Sidebar({ onPostClick }: SidebarProps) {
           <div className="flex-1">
             <p className="text-white/50 text-sm">Guest User</p>
           </div>
-
-        <div className="flex-1 overflow-hidden">
-          <p className="font-bold truncate">
-            {isLoading ? "読み込み中..." : displayName}
-          </p>
-          <p className="text-white/50 text-sm truncate">
-            {isLoading ? "loading……" : `@${userId}`}
-          </p>
-
         </div>
       )}
     </div>
