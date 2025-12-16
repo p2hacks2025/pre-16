@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
+import { FireworksOverlay } from "./FireworksOverlay";
 import { db, storage } from "@/lib/firebase";
 import {
   collection,
@@ -201,8 +202,7 @@ export function SocialTab({
   }, [tab, user]);
 
   const handleNewPost = (_newPost: PostData) => {
-    // Optimistic update removed to prevent duplicate keys with real-time listener
-    // setPosts((prev) => [newPost, ...prev]);
+    setShowFireworks(true);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -312,6 +312,10 @@ export function SocialTab({
             </div>
           ) : null}
         </DragOverlay>
+        <FireworksOverlay
+          isActive={showFireworks}
+          onComplete={() => setShowFireworks(false)}
+        />
       </div>
     </DndContext>
   );
