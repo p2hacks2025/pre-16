@@ -178,7 +178,7 @@ export default function CommunityPage() {
           <div className="lg:hidden sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-sm">
             <Link
               href="/"
-              className="m-3 flex items-center justify-center px-6 py-3 text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-pink-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
+              className="m-3 flex items-center justify-center text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
             >
               HANABI
             </Link>
