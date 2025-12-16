@@ -4,7 +4,12 @@ import React, { useState, useRef } from "react";
 import { Image as ImageIcon, Send, X } from "lucide-react";
 import { PostData } from "./PostCard";
 import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { UserProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +66,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
         content: content.trim(),
         image: imageUrl || null,
         timestamp: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 60 * 60 * 1000),
         likes: 0,
       });
 
@@ -73,6 +79,7 @@ export function CreatePost({ onPost, userProfile }: CreatePostProps) {
         content: content.trim(),
         image: imageUrl || undefined,
         timestamp: Date.now(), // 表示用に仮タイムスタンプ（サーバー側は serverTimestamp）
+        expiresAt: Date.now() + 60 * 60 * 1000,
         likes: 0,
       };
       onPost(newPost);

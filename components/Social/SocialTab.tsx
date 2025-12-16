@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, deleteDoc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
 const STORAGE_KEY = "hanabi_social_posts";
+const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 // Initial seed posts to make it look alive
 const SEED_POSTS: PostData[] = [
@@ -37,6 +38,7 @@ export function SocialTab() {
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
   const [ready, setReady] = useState(false);
+  const cleanedRef = useRef<Set<string>>(new Set());
 
   // Subscribe to Firestore in realtime
   useEffect(() => {
@@ -45,9 +47,27 @@ export function SocialTab() {
       const unsub = onSnapshot(
         q,
         (snap) => {
-          const fetched: PostData[] = snap.docs.map((d) => {
+          const now = Date.now();
+          const fetched: PostData[] = [];
+
+          snap.docs.forEach((d) => {
             const data = d.data() as any;
-            return {
+            const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
+            const expiresAt =
+              (data.expiresAt?.toMillis?.() as number) ?? ts + EXPIRY_MS;
+            const expired = expiresAt <= now;
+
+            if (expired) {
+              if (!cleanedRef.current.has(d.id)) {
+                cleanedRef.current.add(d.id);
+                deleteDoc(d.ref).catch((err) =>
+                  console.error("Failed to auto-delete expired post", err)
+                );
+              }
+              return;
+            }
+
+            fetched.push({
               id: d.id,
               author: data.author ?? "Unknown",
               authorId: data.authorId ?? undefined, // Read authorId
@@ -55,10 +75,12 @@ export function SocialTab() {
               photoURL: data.photoURL ?? undefined,
               content: data.content ?? "",
               image: data.image ?? undefined,
-              timestamp: (data.timestamp?.toMillis?.() as number) ?? Date.now(),
+              timestamp: ts,
+              expiresAt,
               likes: data.likes ?? 0,
-            };
+            });
           });
+
           setPosts(fetched.length ? fetched : SEED_POSTS);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(fetched));
           setReady(true);
