@@ -40,6 +40,14 @@ export default function CommunityPage() {
     );
   }
 
+  const handleComposeClick = () => {
+    if (user) {
+      setShowCompose((prev) => !prev);
+    } else {
+      setShowLoginPrompt(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex justify-center relative">
       {/* Settings Modal (Popup) */}
@@ -74,7 +82,7 @@ export default function CommunityPage() {
 
       {/* Login Prompt for Guests */}
       {!user && (
-        <div className="fixed top-3 sm:top-4 right-3 sm:right-4 z-50 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="fixed top-24 sm:top-28 right-3 sm:right-4 z-40 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2 flex-1">
               <p className="font-semibold text-white text-sm sm:text-base">
@@ -101,6 +109,43 @@ export default function CommunityPage() {
         </div>
       )}
 
+      <div className="lg:hidden fixed bottom-4 left-4 z-50">
+        {user ? (
+          <Link
+            href="/?tab=settings"
+            className="relative flex h-12 w-12 aspect-square items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors hover:border-white/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          >
+            <span className="sr-only">プロフィール設定</span>
+            <div className="flex h-full w-full items-center justify-center p-1">
+              {profile?.photoURL ? (
+                <img
+                  src={profile.photoURL}
+                  alt={profile.displayName}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`h-full w-full rounded-full bg-gradient-to-tr ${
+                    profile?.avatarGradient || "from-blue-500 to-purple-600"
+                  }`}
+                />
+              )}
+            </div>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowLoginPrompt(true)}
+            className="relative flex h-12 w-12 aspect-square items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors hover:border-white/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          >
+            <span className="sr-only">ログイン</span>
+            <div className="flex h-full w-full items-center justify-center p-1">
+              <div className="h-full w-full rounded-full bg-white/10" />
+            </div>
+          </button>
+        )}
+      </div>
+
       {/* Login Modal */}
       {showLoginPrompt && !user && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -123,11 +168,7 @@ export default function CommunityPage() {
 
       <div className="flex w-full">
         {/* Left Sidebar */}
-        <Sidebar
-          onPostClick={() =>
-            user ? setShowCompose(!showCompose) : setShowLoginPrompt(true)
-          }
-        />
+        <Sidebar onPostClick={handleComposeClick} />
 
         {/* Center Spacer (pushes feed to right) */}
         <div className="hidden lg:block flex-1 border-r border-white/10" />
@@ -137,7 +178,7 @@ export default function CommunityPage() {
           <div className="lg:hidden sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-sm">
             <Link
               href="/"
-              className="m-3 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 px-6 py-3 text-2xl font-black tracking-tight text-white drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
+              className="m-3 flex items-center justify-center px-6 py-3 text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-pink-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
             >
               HANABI
             </Link>
@@ -195,7 +236,11 @@ export default function CommunityPage() {
 
           <div className="pb-20">
             <div className="p-3 sm:p-4">
-              <SocialTab tab={activeTab} showCompose={showCompose} />
+              <SocialTab
+                tab={activeTab}
+                showCompose={showCompose}
+                onComposeClick={handleComposeClick}
+              />
             </div>
           </div>
         </main>

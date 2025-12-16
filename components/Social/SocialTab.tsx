@@ -16,7 +16,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Search } from "lucide-react";
+import { Send, Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,9 +50,11 @@ const SEED_POSTS: PostData[] = [
 export function SocialTab({
   tab = "everyone",
   showCompose = false,
+  onComposeClick,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
+  onComposeClick?: () => void;
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
@@ -237,6 +239,19 @@ export function SocialTab({
             placeholder="火種を探す..."
             className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all hover:bg-white/10"
           />
+        </div>
+
+        {/* Mobile Compose Button */}
+        <div className="mb-4 lg:hidden">
+          <button
+            type="button"
+            onClick={onComposeClick}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2 text-sm font-bold uppercase tracking-[0.05em] text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-400 hover:to-red-500 hover:shadow-orange-500/40"
+          >
+            <Send size={16} />
+            <span className="text-base font-black leading-none">発火</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] text-white/80">IGNITE</span>
+          </button>
         </div>
 
         {user && showCompose && (
