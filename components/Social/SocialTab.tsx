@@ -8,6 +8,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { TrashBin } from "./TrashBin";
+import { FireworksOverlay } from "./FireworksOverlay";
 import { DraggablePostCard } from "./DraggablePostCard";
 import {
   doc,
@@ -75,6 +76,7 @@ export function SocialTab({
       },
     })
   );
+  const [showFireworks, setShowFireworks] = useState(false);
 
   // Subscribe to Firestore in realtime
   useEffect(() => {

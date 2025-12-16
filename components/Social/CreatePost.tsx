@@ -119,6 +119,7 @@ export function CreatePost({
         timestamp: Date.now(),
         likes: 0,
       };
+      console.log("CreatePost onPost dispatch", newPost.id);
       onPost(newPost);
 
       // Reset form
