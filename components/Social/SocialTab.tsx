@@ -8,6 +8,8 @@ import { collection, deleteDoc, onSnapshot, orderBy, query,  doc, where,} from "
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   MouseSensor,
   TouchSensor,
   useSensor,
@@ -16,6 +18,18 @@ import {
 import { Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
+import {
+  doc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { CreatePost } from "./CreatePost";
+import { PostData, PostCard } from "./PostCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -158,8 +172,13 @@ export function SocialTab({
     // setPosts((prev) => [newPost, ...prev]);
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
     if (over && over.id === "trash-bin") {
       const postId = active.id as string;
@@ -181,8 +200,14 @@ export function SocialTab({
     }
   };
 
+  const activePost = posts.find((p) => p.id === activeId);
+
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
         {/* Search Bar */}
         <div className="mb-6 relative">
@@ -237,7 +262,13 @@ export function SocialTab({
         */}
         <TrashBin dropTrigger={dropTrigger} />
 
-        {/* Optional: Add DragOverlay for better visual if desired, but default drag works too */}
+        <DragOverlay>
+          {activePost ? (
+            <div className="opacity-90 scale-105 pointer-events-none">
+              <PostCard post={activePost} onLoginRequired={() => {}} />
+            </div>
+          ) : null}
+        </DragOverlay>
       </div>
     </DndContext>
   );
