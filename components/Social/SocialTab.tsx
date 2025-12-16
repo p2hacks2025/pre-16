@@ -109,6 +109,7 @@ export function SocialTab({
                 photoURL: data.photoURL ?? undefined,
                 content: data.content ?? "",
                 image: data.image ?? undefined,
+                attachment: data.attachment ?? undefined,
                 timestamp:
                   (data.timestamp?.toMillis?.() as number) ?? Date.now(),
                 likes: data.likes ?? 0,

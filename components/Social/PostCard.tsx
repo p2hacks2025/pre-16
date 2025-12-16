@@ -26,6 +26,13 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 
+export interface Attachment {
+  url: string;
+  type: string; // MIME type
+  name: string;
+  size: number;
+}
+
 export interface PostData {
   id: string;
   author: string;
@@ -34,7 +41,8 @@ export interface PostData {
   avatar: string; // Gradient classes or placeholder
   photoURL?: string; // User's custom avatar image URL
   content: string;
-  image?: string; // Data URL
+  image?: string; // Legacy field for backward compatibility
+  attachment?: Attachment;
   timestamp: number;
   likes: number;
 }
@@ -258,8 +266,63 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
             {post.content}
           </p>
 
-          {/* Image Attachment */}
-          {post.image && (
+          {/* Media Attachment */}
+          {post.attachment ? (
+            <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
+              {post.attachment.type.startsWith("image/") ? (
+                <img
+                  src={post.attachment.url}
+                  alt={post.attachment.name}
+                  className="w-full h-auto max-h-[400px] object-cover"
+                  loading="lazy"
+                />
+              ) : post.attachment.type.startsWith("video/") ? (
+                <video
+                  src={post.attachment.url}
+                  className="w-full h-auto max-h-[400px] bg-black"
+                  controls
+                  playsInline
+                />
+              ) : (
+                <div className="bg-white/5 p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center text-orange-400">
+                    {/* Generic File Icon */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold truncate">
+                      {post.attachment.name}
+                    </div>
+                    <div className="text-xs text-white/50">
+                      {(post.attachment.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  </div>
+                  <a
+                    href={post.attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-colors"
+                  >
+                    Open
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : post.image ? (
+            // Legacy Image Support
             <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
               <img
                 src={post.image}
@@ -268,7 +331,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
                 loading="lazy"
               />
             </div>
-          )}
+          ) : null}
 
           {/* Actions */}
           <div className="flex justify-between items-center pt-2 text-white/50 max-w-sm">
