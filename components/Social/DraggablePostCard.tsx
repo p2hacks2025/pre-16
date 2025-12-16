@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
+// import { CSS } from "@dnd-kit/utilities"; // Unused now
 import { PostCard, PostData } from "./PostCard";
 
 interface DraggablePostCardProps {
@@ -16,17 +16,13 @@ export function DraggablePostCard({
   onLoginRequired,
   isOwner = false,
 }: DraggablePostCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: post.id,
-      disabled: !isOwner,
-    });
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: post.id,
+    disabled: !isOwner,
+  });
 
   const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 100 : undefined,
-    position: isDragging ? ("relative" as const) : undefined,
+    opacity: isDragging ? 0.3 : 1,
   };
 
   return (
