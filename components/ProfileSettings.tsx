@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { UserProfile } from "@/hooks/useProfile";
-import { Save, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Save, User, LogOut } from "lucide-react";
 
 interface ProfileSettingsProps {
   profile: UserProfile | null;
@@ -21,6 +22,7 @@ const GRADIENT_OPTIONS = [
 ];
 
 export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
+  const { logout } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.displayName || "");
   const [avatarGradient, setAvatarGradient] = useState(
     profile?.avatarGradient || "from-orange-500 to-red-600"
@@ -30,22 +32,34 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
   const [saving, setSaving] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  /* 
+    Sync state with profile prop when it updates (e.g. from loading -> loaded).
+    This fixes the issue where opening settings with loading profile results in empty fields. 
+  */
+  React.useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.displayName || "");
+      setAvatarGradient(profile.avatarGradient || "from-orange-500 to-red-600");
+      setPhotoURL(profile.photoURL || "");
+    }
+  }, [profile]);
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
     setUploading(true);
     try {
-      // Storage にアップロード
-      const storageRef = await import("firebase/storage").then(m => m.ref);
-      const uploadBytes = await import("firebase/storage").then(m => m.uploadBytes);
-      const getDownloadURL = await import("firebase/storage").then(m => m.getDownloadURL);
-      const storage = await import("@/lib/firebase").then(m => m.storage);
-      
-      const imgRef = storageRef(storage, `avatars/${profile.uid}/${Date.now()}`);
+      // Dynamic import usage was failing or weird, let's use the globals we likely have or will standard import
+      const { ref, uploadBytes, getDownloadURL } = await import(
+        "firebase/storage"
+      );
+      const { storage } = await import("@/lib/firebase");
+
+      const imgRef = ref(storage, `avatars/${profile.uid}/${Date.now()}`);
       await uploadBytes(imgRef, file);
       const url = await getDownloadURL(imgRef);
-      
+
       setPhotoURL(url);
     } catch (err) {
       console.error("Failed to upload image", err);
@@ -66,6 +80,7 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
         avatarGradient,
         photoURL: photoURL || undefined,
       });
+      alert("プロフィールを更新しました"); // Add feedback
     } catch (err) {
       console.error("Failed to save profile", err);
     } finally {
@@ -86,7 +101,10 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
 
         {/* Display Name */}
         <div className="space-y-2">
-          <label htmlFor="displayName" className="block text-sm font-medium text-white/80">
+          <label
+            htmlFor="displayName"
+            className="block text-sm font-medium text-white/80"
+          >
             表示名
           </label>
           <input
@@ -114,7 +132,9 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
                 className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
               />
             ) : (
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xl`}>
+              <div
+                className={`w-16 h-16 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xl`}
+              >
                 {displayName[0]?.toUpperCase() || "?"}
               </div>
             )}
@@ -143,9 +163,7 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
                 accept="image/*"
                 onChange={handleImageUpload}
               />
-              <p className="text-xs text-white/40">
-                画像をアップロード
-              </p>
+              <p className="text-xs text-white/40">画像をアップロード</p>
             </div>
           </div>
         </div>
@@ -187,6 +205,17 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
           <Save size={18} />
           {saving ? "保存中..." : "保存"}
         </button>
+
+        <div className="pt-4 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="w-full px-6 py-3 bg-white/5 text-red-400 rounded-lg font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2"
+          >
+            <LogOut size={18} />
+            ログアウト
+          </button>
+        </div>
       </form>
     </div>
   );

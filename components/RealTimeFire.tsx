@@ -9,9 +9,9 @@ export function RealTimeFire() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<"initializing" | "running" | "error">(
-    "initializing"
-  );
+  const [status, setStatus] = useState<
+    "idle" | "initializing" | "running" | "error"
+  >("idle");
   const [debugMsg, setDebugMsg] = useState<string>("");
 
   const { emitParticles, updateAndDrawParticles } = useFireParticles();
@@ -20,62 +20,72 @@ export function RealTimeFire() {
   const frameCountRef = useRef(0); // For throttling detection
 
   // 1. Setup Camera and Models
-  useEffect(() => {
-    let isMounted = true;
+  const startCamera = async () => {
+    setStatus("initializing");
     let stream: MediaStream | null = null;
 
-    const setup = async () => {
-      try {
-        const faceapi = await import("face-api.js");
-        faceApiRef.current = faceapi;
+    try {
+      const faceapi = await import("face-api.js");
+      faceApiRef.current = faceapi;
 
-        const MODEL_URL =
-          "https://justadudewhohacks.github.io/face-api.js/models";
+      const MODEL_URL =
+        "https://justadudewhohacks.github.io/face-api.js/models";
 
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        ]);
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      ]);
 
-        if (!isMounted) return;
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        },
+      });
 
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            facingMode: "user",
-          },
-        });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Ensure video plays inline
+        videoRef.current.setAttribute("playsinline", "true");
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          // Ensure video plays inline
-          videoRef.current.setAttribute("playsinline", "true");
-
-          videoRef.current.onloadedmetadata = () => {
-            if (isMounted) {
-              videoRef.current
-                ?.play()
-                .catch((e) => console.error("Play error:", e));
-              setIsCameraReady(true);
-              setStatus("running");
-            }
-          };
-        }
-      } catch (err: any) {
-        console.error(err);
-        if (isMounted) {
-          setError(`Camera/AI Error: ${err.message || err}`);
-          setStatus("error");
-        }
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            // Check if ref is still valid
+            videoRef.current
+              ?.play()
+              .catch((e) => console.error("Play error:", e));
+            setIsCameraReady(true);
+            setStatus("running");
+          }
+        };
       }
-    };
+    } catch (err: any) {
+      console.error(err);
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        setError(
+          "カメラのアクセスが拒否されました。ブラウザの設定でカメラを許可して、再試行してください。"
+        );
+      } else if (
+        err.name === "NotFoundError" ||
+        err.name === "DevicesNotFoundError"
+      ) {
+        setError("カメラが見つかりません。");
+      } else {
+        setError(`カメラエラー: ${err.message || "Unknown error"}`);
+      }
+      setStatus("error");
+    }
+  };
 
-    setup();
-
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      isMounted = false;
-      if (stream) {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
       }
     };
@@ -156,14 +166,6 @@ export function RealTimeFire() {
 
       // Draw Particles
       updateAndDrawParticles(ctx);
-
-      // Draw Debug Info
-      /*
-         ctx.font = '16px monospace';
-         ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
-         ctx.fillText(debugMsg, 10, 20);
-         */
-
       requestRef.current = requestAnimationFrame(detectAndDraw);
     };
 
@@ -174,11 +176,39 @@ export function RealTimeFire() {
     };
   }, [isCameraReady, emitParticles, updateAndDrawParticles]);
 
+  if (status === "idle") {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-white/10 bg-black rounded-xl h-[400px]">
+        <h3 className="text-xl font-bold text-white mb-6">
+          Real-time Fire Camera
+        </h3>
+        <p className="text-white/60 mb-8 max-w-md">
+          カメラを使用して、あなたの顔に合わせて炎のエフェクトを表示します。
+          <br />
+          カメラの使用を許可してください。
+        </p>
+        <button
+          onClick={startCamera}
+          className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-bold hover:from-orange-400 hover:to-red-500 transition-all shadow-lg hover:shadow-orange-500/25"
+        >
+          カメラを開始する
+        </button>
+      </div>
+    );
+  }
+
   if (status === "error") {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border border-red-500/30 bg-red-500/10 rounded-xl">
-        <VideoOff className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-red-200">{error}</p>
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-red-500/30 bg-red-500/10 rounded-xl h-[400px]">
+        <VideoOff className="w-16 h-16 text-red-500 mb-6" />
+        <h3 className="text-xl font-bold text-red-400 mb-2">Camera Error</h3>
+        <p className="text-red-200 mb-6 max-w-md">{error}</p>
+        <button
+          onClick={() => setStatus("idle")}
+          className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full font-bold transition-colors"
+        >
+          戻る
+        </button>
       </div>
     );
   }
@@ -205,11 +235,14 @@ export function RealTimeFire() {
         )}
       </div>
 
-      {!isCameraReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-          <p className="text-blue-400 animate-pulse font-bold">
-            Initializing Camera & AI...
-          </p>
+      {status === "initializing" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-orange-400 font-bold animate-pulse">
+              Starting Camera & Loading AI...
+            </p>
+          </div>
         </div>
       )}
 

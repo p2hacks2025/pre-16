@@ -164,7 +164,7 @@ export function CreatePost({
                 handleSubmit(e);
               }
             }}
-            placeholder="What's burning? 🔥"
+            placeholder="なにを炎上させる? 🔥"
             className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-white/40 text-lg resize-none min-h-[80px]"
           />
 
@@ -248,7 +248,7 @@ export function CreatePost({
                 className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-bold text-sm hover:from-orange-400 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg hover:shadow-orange-500/25"
               >
                 <Send size={16} />
-                {submitting ? "Posting..." : "Post"}
+                {submitting ? "発火中..." : "発火"}
               </button>
             </div>
           </div>

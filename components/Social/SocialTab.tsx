@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
 import {
@@ -61,6 +62,7 @@ export function SocialTab({
   const [ready, setReady] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null); // Unused but kept if needed for drag overlay later
   const [dropTrigger, setDropTrigger] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -178,6 +180,20 @@ export function SocialTab({
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+        {/* Search Bar */}
+        <div className="mb-6 relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">
+            <Search size={18} />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="火種を探す..."
+            className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all hover:bg-white/10"
+          />
+        </div>
+
         {user && showCompose && (
           <CreatePost
             onPost={handleNewPost}
@@ -191,14 +207,24 @@ export function SocialTab({
           {!ready && (
             <div className="text-white/50 text-sm">Loading posts...</div>
           )}
-          {posts.map((post) => (
-            <DraggablePostCard
-              key={post.id}
-              post={post}
-              isOwner={user?.uid === post.authorId}
-              onLoginRequired={() => {}}
-            />
-          ))}
+          {posts
+            .filter((post) => {
+              if (!searchQuery.trim()) return true;
+              const q = searchQuery.toLowerCase();
+              return (
+                post.content.toLowerCase().includes(q) ||
+                post.author.toLowerCase().includes(q) ||
+                post.attachment?.name.toLowerCase().includes(q)
+              );
+            })
+            .map((post) => (
+              <DraggablePostCard
+                key={post.id}
+                post={post}
+                isOwner={user?.uid === post.authorId}
+                onLoginRequired={() => {}}
+              />
+            ))}
         </div>
 
         {/* Render TrashBin if user is logged in (or always if we allow guest deletes locally?) 

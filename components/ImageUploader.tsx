@@ -75,7 +75,7 @@ export function ImageUploader({ onImageSelect }: ImageUploaderProps) {
         </div>
         <div className="text-center">
           <p className="text-xl font-bold">
-            {isDragging ? "Drop it like it's hot!" : "Upload your creature"}
+            {isDragging ? "Drop it like it's hot!" : "Upload your picture"}
           </p>
           <p className="text-sm opacity-60 mt-2">
             Click or drag & drop an image here

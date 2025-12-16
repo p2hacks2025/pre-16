@@ -8,11 +8,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { X } from "lucide-react";
 
+import { useSearchParams, useRouter } from "next/navigation";
+import { ProfileSettings } from "@/components/ProfileSettings";
+import { useProfile } from "@/hooks/useProfile";
+
+// ... existing imports ...
+
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
   const { user, loading } = useAuth();
+  const { profile, updateProfile } = useProfile(user);
+
+  const searchParams = useSearchParams();
+  const isSettingsOpen = searchParams.get("tab") === "settings";
+  const router = useRouter();
+
+  const handleCloseSettings = () => {
+    // Remove tab param by replacing (to avoid history stack buildup if desired, or push to root /sns)
+    router.replace("/sns");
+  };
 
   // Show loading state while checking auth
   if (loading) {
@@ -24,7 +40,37 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex justify-center">
+    <div className="min-h-screen bg-black text-white flex justify-center relative">
+      {/* Settings Modal (Popup) */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-2xl">
+            <button
+              onClick={handleCloseSettings}
+              className="absolute -top-12 right-0 md:-right-12 text-white/50 hover:text-white transition-colors"
+            >
+              <X size={32} />
+            </button>
+            {user ? (
+              <ProfileSettings profile={profile} onSave={updateProfile} />
+            ) : (
+              <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
+                <p>ログインしてください</p>
+                <button
+                  onClick={() => {
+                    handleCloseSettings();
+                    setShowLoginPrompt(true);
+                  }}
+                  className="mt-4 px-6 py-2 bg-white text-black rounded-full font-bold"
+                >
+                  ログイン画面へ
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Login Prompt for Guests */}
       {!user && (
         <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">

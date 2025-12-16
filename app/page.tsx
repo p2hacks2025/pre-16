@@ -16,6 +16,7 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface NavButtonProps {
   isActive?: boolean;
@@ -83,9 +84,15 @@ function NavButton({
 export default function Home() {
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   const [activeTab, setActiveTab] = useState<
     "intro" | "upload" | "camera" | "login" | "settings"
-  >("intro");
+  >(
+    (tabParam as "intro" | "upload" | "camera" | "login" | "settings") ||
+      "intro"
+  );
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-black text-white selection:bg-orange-500/30">
@@ -94,11 +101,6 @@ export default function Home() {
           <h1 className="text-7xl font-black tracking-tighter bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text text-transparent animate-gradient drop-shadow-sm p-2">
             HANABI
           </h1>
-          {activeTab !== "intro" && (
-            <p className="text-xl text-white/60 font-light animate-in fade-in slide-in-from-top-2">
-              Ignite your world with AI
-            </p>
-          )}
         </header>
 
         {/* Tab Navigation */}
@@ -145,9 +147,7 @@ export default function Home() {
 
         {/* Content Area */}
         <div className="w-full flex justify-center min-h-[400px] animate-in fade-in duration-500">
-          {activeTab === "intro" && (
-            <Introduction onStart={() => setActiveTab("upload")} />
-          )}
+          {activeTab === "intro" && <Introduction />}
           {activeTab === "upload" && <UploadMode />}
           {activeTab === "camera" && <RealTimeFire />}
           {activeTab === "login" && <Login />}
