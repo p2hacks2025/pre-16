@@ -18,18 +18,6 @@ import {
 import { Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
-import {
-  doc,
-  deleteDoc,
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { CreatePost } from "./CreatePost";
-import { PostData, PostCard } from "./PostCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 

@@ -45,7 +45,6 @@ export interface PostData {
   attachment?: Attachment;
   timestamp: number;
   likes: number;
-  authorId?: string;
   expiresAt?: number; // epoch ms when the post should expire
 }
 
