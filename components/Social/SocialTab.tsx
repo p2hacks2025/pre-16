@@ -1,4 +1,10 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { CreatePost } from "./CreatePost";
+import { PostCard, PostData } from "./PostCard";
+import { db } from "@/lib/firebase";
+import { collection, deleteDoc, onSnapshot, orderBy, query,  doc, where,} from "firebase/firestore";
 import {
   DndContext,
   DragEndEvent,
@@ -11,7 +17,6 @@ import {
 } from "@dnd-kit/core";
 import { Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
-import { FireworksOverlay } from "./FireworksOverlay";
 import { DraggablePostCard } from "./DraggablePostCard";
 import {
   doc,
@@ -29,6 +34,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
 const STORAGE_KEY = "hanabi_social_posts";
+const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 // Initial seed posts to make it look alive
 const SEED_POSTS: PostData[] = [
@@ -63,6 +69,7 @@ export function SocialTab({
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
   const [ready, setReady] = useState(false);
+  const cleanedRef = useRef<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null); // Unused but kept if needed for drag overlay later
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,32 +110,39 @@ export function SocialTab({
       const unsub = onSnapshot(
         q,
         (snap) => {
-          const fetched: PostData[] = snap.docs
-            .map((d) => {
-              const data = d.data() as any;
-              return {
-                id: d.id,
-                author: data.author ?? "Unknown",
-                authorId: data.authorId ?? undefined,
-                visibility: data.visibility ?? "public",
-                avatar: data.avatar ?? "from-orange-500 to-red-600",
-                photoURL: data.photoURL ?? undefined,
-                content: data.content ?? "",
-                image: data.image ?? undefined,
-                attachment: data.attachment ?? undefined,
-                timestamp:
-                  (data.timestamp?.toMillis?.() as number) ?? Date.now(),
-                likes: data.likes ?? 0,
-              };
-            })
-            // Client-side filtering for simplicity
-            .filter((p) => {
-              // If we are in "everyone" tab, hide private posts
-              if (tab === "everyone" && p.visibility === "private") {
-                return false;
+          const now = Date.now();
+          const fetched: PostData[] = [];
+
+          snap.docs.forEach((d) => {
+            const data = d.data() as any;
+            const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
+            const expiresAt =
+              (data.expiresAt?.toMillis?.() as number) ?? ts + EXPIRY_MS;
+            const expired = expiresAt <= now;
+
+            if (expired) {
+              if (!cleanedRef.current.has(d.id)) {
+                cleanedRef.current.add(d.id);
+                deleteDoc(d.ref).catch((err) =>
+                  console.error("Failed to auto-delete expired post", err)
+                );
               }
-              return true;
+              return;
+            }
+
+            fetched.push({
+              id: d.id,
+              author: data.author ?? "Unknown",
+              authorId: data.authorId ?? undefined, // Read authorId
+              avatar: data.avatar ?? "from-orange-500 to-red-600",
+              photoURL: data.photoURL ?? undefined,
+              content: data.content ?? "",
+              image: data.image ?? undefined,
+              timestamp: ts,
+              expiresAt,
+              likes: data.likes ?? 0,
             });
+          });
 
           setPosts(fetched.length ? fetched : SEED_POSTS);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(fetched));

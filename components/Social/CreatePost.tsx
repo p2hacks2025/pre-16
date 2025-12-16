@@ -4,7 +4,12 @@ import React, { useState, useRef } from "react";
 import { Image as ImageIcon, Send, X } from "lucide-react";
 import { PostData } from "./PostCard";
 import { db, storage } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { UserProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +110,7 @@ export function CreatePost({
         content: content.trim(),
         attachment: attachmentData || null,
         timestamp: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 60 * 60 * 1000),
         likes: 0,
         visibility: isPrivate ? "private" : "public",
       });
@@ -116,7 +122,8 @@ export function CreatePost({
         photoURL: photoURL || undefined,
         content: content.trim(),
         attachment: attachmentData,
-        timestamp: Date.now(),
+        timestamp: Date.now(), // 表示用に仮タイムスタンプ（サーバー側は serverTimestamp）
+        expiresAt: Date.now() + 60 * 60 * 1000,
         likes: 0,
       };
       console.log("CreatePost onPost dispatch", newPost.id);

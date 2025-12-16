@@ -45,10 +45,8 @@ export interface PostData {
   attachment?: Attachment;
   timestamp: number;
   likes: number;
-}
-
-interface PostCardProps {
-  post: PostData;
+  authorId?: string;
+  expiresAt?: number; // epoch ms when the post should expire
 }
 
 interface ReplyData {
@@ -62,6 +60,13 @@ interface ReplyData {
 interface PostCardProps {
   post: PostData;
   onLoginRequired?: () => void;
+}
+
+interface ReplyData {
+  author?: string;
+  content?: string;
+  photoURL?: string;
+  timestamp?: any;
 }
 
 export function PostCard({ post, onLoginRequired }: PostCardProps) {
