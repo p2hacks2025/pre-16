@@ -9,7 +9,7 @@ import {
   Trash2,
   Send,
 } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import {
   collection,
   addDoc,
@@ -24,6 +24,7 @@ import {
   increment,
   updateDoc,
 } from "firebase/firestore";
+import { deleteObject, ref } from "firebase/storage";
 import { useAuth } from "@/hooks/useAuth";
 
 export interface Attachment {
@@ -144,9 +145,20 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
     }
   };
 
+  const deleteAttachmentFromStorage = async (url?: string) => {
+    if (!url) return;
+    try {
+      const fileRef = ref(storage, url);
+      await deleteObject(fileRef);
+    } catch (err) {
+      console.warn("Failed to delete attachment from storage", err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
     try {
+      await deleteAttachmentFromStorage(post.attachment?.url ?? post.image);
       await deleteDoc(doc(db, "posts", post.id));
       // No need to update state manually, SocialTab listener handles it
     } catch (error) {

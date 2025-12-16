@@ -3,8 +3,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
-import { db } from "@/lib/firebase";
-import { collection, deleteDoc, onSnapshot, orderBy, query,  doc, where,} from "firebase/firestore";
+import { db, storage } from "@/lib/firebase";
+import { collection, deleteDoc, onSnapshot, orderBy, query, doc, where } from "firebase/firestore";
+import { deleteObject, ref } from "firebase/storage";
 import {
   DndContext,
   DragEndEvent,
@@ -62,6 +63,22 @@ export function SocialTab({
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const deleteAttachmentFromStorage = async (url?: string) => {
+    if (!url) return;
+    try {
+      const fileRef = ref(storage, url);
+      await deleteObject(fileRef);
+    } catch (err) {
+      console.warn("Failed to delete attachment from storage", err);
+    }
+  };
+
+  const deletePostAssets = async (post?: PostData) => {
+    if (!post) return;
+    const url = post.attachment?.url ?? post.image;
+    await deleteAttachmentFromStorage(url);
+  };
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
@@ -111,6 +128,12 @@ export function SocialTab({
             if (expired) {
               if (!cleanedRef.current.has(d.id)) {
                 cleanedRef.current.add(d.id);
+                deletePostAssets({
+                  attachment: data.attachment,
+                  image: data.image,
+                }).catch((err) =>
+                  console.warn("Failed to delete expired post attachment", err)
+                );
                 deleteDoc(d.ref).catch((err) =>
                   console.error("Failed to auto-delete expired post", err)
                 );
@@ -126,6 +149,7 @@ export function SocialTab({
               photoURL: data.photoURL ?? undefined,
               content: data.content ?? "",
               image: data.image ?? undefined,
+              attachment: data.attachment ?? undefined,
               timestamp: ts,
               expiresAt,
               likes: data.likes ?? 0,
@@ -170,6 +194,7 @@ export function SocialTab({
 
     if (over && over.id === "trash-bin") {
       const postId = active.id as string;
+      const targetPost = posts.find((p) => p.id === postId);
 
       // Trigger effect
       setDropTrigger(Date.now());
@@ -177,8 +202,9 @@ export function SocialTab({
       // Delete from local state instantly
       setPosts((prev) => prev.filter((p) => p.id !== postId));
 
-      // Delete from Firestore if it exists there
+      // Delete from Firestore and Storage if they exist there
       try {
+        await deletePostAssets(targetPost);
         await deleteDoc(doc(db, "posts", postId));
         console.log("Deleted post", postId);
       } catch (e) {
