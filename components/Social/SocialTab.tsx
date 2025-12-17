@@ -122,7 +122,9 @@ export function SocialTab({
     })
   );
   const [showFireworks, setShowFireworks] = useState(false);
-  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(null);
+  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
+    null
+  );
 
   // Subscribe to Firestore in realtime
   useEffect(() => {
@@ -274,9 +276,6 @@ export function SocialTab({
               className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6"
             >
               <PostCard post={p} onLoginRequired={() => {}} />
-              <div className="text-center mt-2 text-white/50 text-sm animate-pulse">
-                Syncing...
-              </div>
             </div>
           ))}
         </div>
