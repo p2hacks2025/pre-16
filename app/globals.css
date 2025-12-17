@@ -29,3 +29,27 @@ body {
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom Animation for Delayed Post */
+@keyframes broadcast-sequence {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  5% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateX(450px); /* Move right towards timeline */
+  }
+}
+
+.animate-broadcast {
+  animation: broadcast-sequence 10s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

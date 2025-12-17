@@ -59,19 +59,24 @@ const SEED_POSTS: PostData[] = [
 export function SocialTab({
   tab = "everyone",
   showCompose = false,
+  onPendingPostsChange,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
+  onPendingPostsChange?: (posts: PostData[]) => void;
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
   const [ready, setReady] = useState(false);
   const cleanedRef = useRef<Set<string>>(new Set());
-  const [activeId, setActiveId] = useState<string | null>(null); // Unused but kept if needed for drag overlay later
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [hideNegative, setHideNegative] = useState(false);
+
+  // New state for the 10-second pending post animation (Array)
+  const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
 
   useEffect(() => {
     const checkSetting = () => {
@@ -103,12 +108,12 @@ export function SocialTab({
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 10, // Require 10px movement before drag starts (allows clicks)
+        distance: 10,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250, // Long press to drag on touch, allowing scrolling
+        delay: 250,
         tolerance: 5,
       },
     })
@@ -165,7 +170,7 @@ export function SocialTab({
             fetched.push({
               id: d.id,
               author: data.author ?? "Unknown",
-              authorId: data.authorId ?? undefined, // Read authorId
+              authorId: data.authorId ?? undefined,
               avatar: data.avatar ?? "from-orange-500 to-red-600",
               photoURL: data.photoURL ?? undefined,
               content: data.content ?? "",
@@ -201,8 +206,23 @@ export function SocialTab({
     }
   }, [tab, user]);
 
-  const handleNewPost = (_newPost: PostData) => {
+  // Synchronize local pending posts with parent (CommunityPage)
+  useEffect(() => {
+    if (onPendingPostsChange) {
+      onPendingPostsChange(pendingPosts);
+    }
+  }, [pendingPosts, onPendingPostsChange]);
+
+  const handleNewPost = (newPost: PostData) => {
     setShowFireworks(true);
+
+    // Add to pending array
+    setPendingPosts((current) => [...current, newPost]);
+
+    // Remove this specific post after 10s
+    setTimeout(() => {
+      setPendingPosts((current) => current.filter((p) => p.id !== newPost.id));
+    }, 10000);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -217,20 +237,15 @@ export function SocialTab({
       const postId = active.id as string;
       const targetPost = posts.find((p) => p.id === postId);
 
-      // Trigger effect
       setDropTrigger(Date.now());
-
-      // Delete from local state instantly
       setPosts((prev) => prev.filter((p) => p.id !== postId));
 
-      // Delete from Firestore and Storage if they exist there
       try {
         await deletePostAssets(targetPost);
         await deleteDoc(doc(db, "posts", postId));
         console.log("Deleted post", postId);
       } catch (e) {
         console.error("Error deleting post", e);
-        // Could revert state here if strict consistency needed
       }
     }
   };
@@ -243,7 +258,22 @@ export function SocialTab({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      <div className="w-full relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Mobile "Center" Shim - if on mobile, show pending posts here at top */}
+        <div className="lg:hidden mb-6 flex flex-col gap-4">
+          {pendingPosts.map((p) => (
+            <div
+              key={p.id}
+              className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6"
+            >
+              <PostCard post={p} onLoginRequired={() => {}} />
+              <div className="text-center mt-2 text-white/50 text-sm animate-pulse">
+                Syncing...
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Search Bar */}
         <div className="mb-4 sm:mb-6 relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">
@@ -266,9 +296,8 @@ export function SocialTab({
             isPrivate={tab === "solo"}
           />
         )}
+
         <div className="space-y-3 sm:space-y-4 pb-24">
-          {" "}
-          {/* Added padding for TrashBin */}
           {!ready && (
             <div className="text-white/50 text-xs sm:text-sm">
               Loading posts...
@@ -276,6 +305,9 @@ export function SocialTab({
           )}
           {posts
             .filter((post) => {
+              // Hide pending posts from timeline
+              if (pendingPosts.some((p) => p.id === post.id)) return false;
+
               // Hide negative if setting enabled
               if (hideNegative && post.sentiment?.label === "negative") {
                 return false;
@@ -295,14 +327,11 @@ export function SocialTab({
                 post={post}
                 isOwner={user?.uid === post.authorId}
                 onLoginRequired={() => {}}
+                className="animate-in fade-in duration-700 fill-mode-backwards slide-in-from-top-8 lg:slide-in-from-top-0 lg:slide-in-from-left-48"
               />
             ))}
         </div>
 
-        {/* Render TrashBin if user is logged in (or always if we allow guest deletes locally?) 
-            Let's show it always for interaction feel, but maybe disable logic? 
-            Assuming user works for now based on context. 
-        */}
         <TrashBin dropTrigger={dropTrigger} />
 
         <DragOverlay>

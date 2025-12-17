@@ -11,8 +11,8 @@ import { X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
-
-// ... existing imports ...
+import { PostCard, PostData } from "@/components/Social/PostCard";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
@@ -21,12 +21,44 @@ export default function CommunityPage() {
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
 
+  // Pending posts state for animation in left column (Array)
+  const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+
+  // Smooth animation for list sorting/removal - Custom config to prevent flicker
+  const [animationParent] = useAutoAnimate(
+    (el, action, oldCoords, newCoords) => {
+      // New items: let CSS (.animate-broadcast) handle the entry
+      if (action === "add") {
+        return new KeyframeEffect(el, [], { duration: 0 });
+      }
+      // Removed items: Kill visibility immediately to prevent CSS animation restart
+      // Return small duration to ensure 'remain' callback is triggered for siblings
+      if (action === "remove") {
+        el.style.opacity = "0";
+        return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
+      }
+      // Remaining items: Slide them to their new position (e.g. up)
+      if (action === "remain") {
+        const deltaX = oldCoords.left - newCoords.left;
+        const deltaY = oldCoords.top - newCoords.top;
+        const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
+        const end = { transform: `translate(0, 0)` };
+        // Slower duration + smooth easing for 'null-to' feel
+        return new KeyframeEffect(el, [start, end], {
+          duration: 500,
+          easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
+        });
+      }
+      return new KeyframeEffect(el, [], { duration: 0 });
+    }
+  );
+
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
   const router = useRouter();
 
   const handleCloseSettings = () => {
-    // Remove tab param by replacing (to avoid history stack buildup if desired, or push to root /sns)
+    // Remove tab param by replacing
     router.replace("/sns");
   };
 
@@ -127,10 +159,35 @@ export default function CommunityPage() {
           }
         />
 
-        {/* Center Spacer (pushes feed to right) */}
-        <div className="hidden lg:block flex-1 border-r border-white/10" />
+        {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
+            Adjusted to top-left align with padding to match "below Ignite button"
+        */}
+        <div
+          ref={animationParent}
+          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-start justify-start pt-[280px] pl-8 relative gap-6"
+        >
+          {pendingPosts.length > 0 ? (
+            <>
+              {pendingPosts.map((post) => (
+                <div key={post.id} className="w-full max-w-md">
+                  {/* Inner wrapper handles the visual animation, isolated from layout shifts */}
+                  <div className="w-full animate-broadcast">
+                    <PostCard post={post} onLoginRequired={() => {}} />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="text-white/10 w-full h-full flex flex-col items-center justify-center select-none pb-[280px]">
+              <div className="text-8xl mb-4 opacity-50 grayscale">🌋</div>
+              <div className="text-sm tracking-[0.2em] font-light">
+                NO SIGNAL
+              </div>
+            </div>
+          )}
+        </div>
 
-        {/* Main Feed (Moved to Right) */}
+        {/* Main Feed (Right Side) */}
         <main className="w-full lg:w-[600px] lg:flex-none border-l border-white/20 min-h-screen relative">
           <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
             <div className="flex w-full">
@@ -184,7 +241,11 @@ export default function CommunityPage() {
 
           <div className="pb-20">
             <div className="p-3 sm:p-4">
-              <SocialTab tab={activeTab} showCompose={showCompose} />
+              <SocialTab
+                tab={activeTab}
+                showCompose={showCompose}
+                onPendingPostsChange={setPendingPosts}
+              />
             </div>
           </div>
         </main>
