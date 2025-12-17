@@ -14,6 +14,7 @@ import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import type { AutoAnimationPlugin } from "@formkit/auto-animate";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
@@ -26,33 +27,41 @@ export default function CommunityPage() {
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
 
   // Smooth animation for list sorting/removal - Custom config to prevent flicker
-  const [animationParent] = useAutoAnimate(
-    (el, action, oldCoords, newCoords) => {
-      // New items: let CSS (.animate-broadcast) handle the entry
-      if (action === "add") {
-        return new KeyframeEffect(el, [], { duration: 0 });
-      }
-      // Removed items: Kill visibility immediately to prevent CSS animation restart
-      // Return small duration to ensure 'remain' callback is triggered for siblings
-      if (action === "remove") {
-        el.style.opacity = "0";
-        return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
-      }
-      // Remaining items: Slide them to their new position (e.g. up)
-      if (action === "remain") {
-        const deltaX = oldCoords.left - newCoords.left;
-        const deltaY = oldCoords.top - newCoords.top;
-        const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
-        const end = { transform: `translate(0, 0)` };
-        // Slower duration + smooth easing for 'null-to' feel
-        return new KeyframeEffect(el, [start, end], {
-          duration: 500,
-          easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
-        });
-      }
+  const customAnimationPlugin: AutoAnimationPlugin = (
+    el,
+    action,
+    newCoords,
+    oldCoords
+  ) => {
+    // New items: let CSS (.animate-broadcast) handle the entry
+    if (action === "add") {
       return new KeyframeEffect(el, [], { duration: 0 });
     }
-  );
+    // Removed items: Kill visibility immediately to prevent CSS animation restart
+    // Return small duration to ensure 'remain' callback is triggered for siblings
+    if (action === "remove") {
+      (el as HTMLElement).style.opacity = "0";
+      return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
+    }
+    // Remaining items: Slide them to their new position (e.g. up)
+    if (action === "remain") {
+      if (!oldCoords || !newCoords) {
+        return new KeyframeEffect(el, [], { duration: 0 });
+      }
+      const deltaX = oldCoords.left - newCoords.left;
+      const deltaY = oldCoords.top - newCoords.top;
+      const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
+      const end = { transform: `translate(0, 0)` };
+      // Slower duration + smooth easing for 'null-to' feel
+      return new KeyframeEffect(el, [start, end], {
+        duration: 500,
+        easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
+      });
+    }
+    return new KeyframeEffect(el, [], { duration: 0 });
+  };
+
+  const [animationParent] = useAutoAnimate<HTMLElement>(customAnimationPlugin);
 
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
@@ -297,6 +306,7 @@ export default function CommunityPage() {
                 tab={activeTab}
                 showCompose={showCompose}
                 onComposeClick={handleComposeClick}
+                onPendingPostsChange={setPendingPosts}
               />
             </div>
           </div>

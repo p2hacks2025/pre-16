@@ -60,10 +60,12 @@ export function SocialTab({
   tab = "everyone",
   showCompose = false,
   onComposeClick,
+  onPendingPostsChange,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
   onComposeClick?: () => void;
+  onPendingPostsChange?: (pendingPosts: PostData[]) => void;
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
@@ -99,7 +101,8 @@ export function SocialTab({
     }
   };
 
-  const deletePostAssets = async (post?: PostData) => {
+  type PostAssets = Pick<PostData, "attachment" | "image">;
+  const deletePostAssets = async (post?: PostAssets) => {
     if (!post) return;
     const url = post.attachment?.url ?? post.image;
     await deleteAttachmentFromStorage(url);
