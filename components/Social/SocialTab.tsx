@@ -61,11 +61,13 @@ export function SocialTab({
   showCompose = false,
   onComposeClick,
   onPendingPostsChange,
+  soundEnabled = false,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
   onComposeClick?: () => void;
   onPendingPostsChange?: (pendingPosts: PostData[]) => void;
+  soundEnabled?: boolean;
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
@@ -448,7 +450,15 @@ export function SocialTab({
         <FireworksOverlay
           isActive={showFireworks}
           sentimentLabel={fireworksSentiment}
-          sound={{ enabled: true, files: ['/sounds/fireworks.mp3'], volume: { min: 90, max: 100 } }}
+          sound={
+            soundEnabled
+              ? {
+                  enabled: true,
+                  files: ["/sounds/fireworks.mp3"],
+                  volume: { min: 90, max: 100 },
+                }
+              : { enabled: false }
+          }
           onComplete={() => {
             setShowFireworks(false);
             setFireworksSentiment(null);
