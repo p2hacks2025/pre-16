@@ -8,16 +8,25 @@ import type { FireworksHandlers } from "@shun_god/fireworks-js-setlocation-react
 interface FireworksOverlayProps {
   isActive: boolean;
   onComplete: () => void;
+  /** Optional sentiment label to pick color scheme: "positive", "negative", etc. */
+  sentimentLabel?: string | null;
 }
 
 export function FireworksOverlay({
   isActive,
   onComplete,
+  sentimentLabel = null,
 }: FireworksOverlayProps) {
   const fwRef = useRef<FireworksHandlers | null>(null);
   const burstDistance =
     typeof window !== "undefined" ? Math.round(window.innerHeight / 2) : 400;
   const rocketsPointValue = 33; // 画面左から約1/3の位置
+
+  // Map sentiment to hue ranges. Default is the earlier orange-ish range.
+  const defaultHue = { min: 12, max: 42 };
+  const positiveHue = { min: 12, max: 42 };
+  const negativeHue = { min: 200, max: 240 };
+  const neutralHue = { min: 120, max: 160 };
 
   useEffect(() => {
     if (isActive) {
@@ -33,6 +42,15 @@ export function FireworksOverlay({
       return () => clearTimeout(timer);
     }
   }, [isActive, onComplete]);
+
+  // Decide hue range based on sentiment label
+  const hue = (() => {
+    if (!isActive) return defaultHue;
+    if (!sentimentLabel) return defaultHue;
+    if (sentimentLabel === "positive") return positiveHue;
+    if (sentimentLabel === "negative") return negativeHue;
+    return neutralHue;
+  })();
 
   useEffect(() => {
     const fw = fwRef.current;
@@ -54,8 +72,7 @@ export function FireworksOverlay({
 
   return createPortal(
     <div className="fixed inset-0 z-9999 pointer-events-none">
-      <Fireworks
-        ref={fwRef}
+      <Fireworks ref={fwRef}
         options={{
           launchAngle: 90,
           burstDistance,
@@ -71,10 +88,7 @@ export function FireworksOverlay({
           intensity: 22,
           flickering: 35,
           lineStyle: "round",
-          hue: {
-            min: 12,
-            max: 42,
-          },
+          hue: hue,
           delay: {
             min: 80,
             max: 120,

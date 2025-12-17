@@ -46,7 +46,7 @@ export interface PostData {
   attachment?: Attachment;
   sentiment?: {
     score: number;
-    label: "positive" | "negative";
+    label: "positive" | "negative" | "neutral";
   };
   timestamp: number;
   likes: number;

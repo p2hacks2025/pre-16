@@ -99,7 +99,7 @@ export function SocialTab({
     }
   };
 
-  const deletePostAssets = async (post?: PostData) => {
+  const deletePostAssets = async (post?: Partial<PostData>) => {
     if (!post) return;
     const url = post.attachment?.url ?? post.image;
     await deleteAttachmentFromStorage(url);
@@ -119,6 +119,7 @@ export function SocialTab({
     })
   );
   const [showFireworks, setShowFireworks] = useState(false);
+  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(null);
 
   // Subscribe to Firestore in realtime
   useEffect(() => {
@@ -214,6 +215,9 @@ export function SocialTab({
   }, [pendingPosts, onPendingPostsChange]);
 
   const handleNewPost = (newPost: PostData) => {
+    // Choose sentiment preset for fireworks and activate
+    const label = newPost.sentiment?.label ?? null;
+    setFireworksSentiment(label);
     setShowFireworks(true);
 
     // Add to pending array
@@ -343,7 +347,11 @@ export function SocialTab({
         </DragOverlay>
         <FireworksOverlay
           isActive={showFireworks}
-          onComplete={() => setShowFireworks(false)}
+          sentimentLabel={fireworksSentiment}
+          onComplete={() => {
+            setShowFireworks(false);
+            setFireworksSentiment(null);
+          }}
         />
       </div>
     </DndContext>
