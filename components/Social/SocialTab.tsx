@@ -173,6 +173,11 @@ export function SocialTab({
               return;
             }
 
+            // FILTER: If we are not in 'solo' tab, hide posts marked as private
+            if (tab !== "solo" && data.visibility === "private") {
+              return;
+            }
+
             fetched.push({
               id: d.id,
               author: data.author ?? "Unknown",
