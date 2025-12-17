@@ -3,15 +3,17 @@
 import React from "react";
 import Link from "next/link";
 
-import { Home, Search, Mail, MoreHorizontal } from "lucide-react";
+import { Home, Mail, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
 interface SidebarProps {
   onPostClick?: () => void;
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
 }
 
-export function Sidebar({ onPostClick }: SidebarProps) {
+export function Sidebar({ onPostClick, soundEnabled = false, onToggleSound }: SidebarProps) {
 
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile(user);
@@ -34,12 +36,28 @@ export function Sidebar({ onPostClick }: SidebarProps) {
   return (
     <div className="sticky top-0 h-screen w-[275px] shrink-0 flex flex-col justify-between px-4 py-4 border-r border-white/20 overflow-y-auto hidden lg:flex">
       <div className="flex flex-col gap-2">
-        {/* Logo Area */}
-        <Link href="/" className="flex items-center gap-2 mb-4 px-2">
-          <span className="text-3xl font-black bg-gradient-to-br from-pink-500 via-orange-500 to-blue-500 bg-clip-text text-transparent tracking-tighter drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">
+        {/* Logo + Volume */}
+        <div className="flex items-center justify-between w-full gap-3 mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-3xl font-black bg-gradient-to-br from-pink-500 via-orange-500 to-blue-500 bg-clip-text text-transparent tracking-tighter drop-shadow-[0_0_10px_rgba(236,72,153,0.5)] leading-none select-none"
+          >
             HANABI
-          </span>
-        </Link>
+          </Link>
+          <button
+            type="button"
+            aria-pressed={soundEnabled}
+            aria-label={soundEnabled ? "音量ON" : "音量OFF"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSound?.();
+            }}
+            disabled={!onToggleSound}
+            className="relative inline-flex h-10 w-10 items-center justify-center bg-black/40 text-white transition-colors hover:border-orange-400/70 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+        </div>
 
         {/* Navigation Items */}
         <nav className="flex flex-col gap-2">
@@ -80,7 +98,7 @@ export function Sidebar({ onPostClick }: SidebarProps) {
           onClick={onPostClick}
           className="mt-6 w-full relative group overflow-hidden rounded-full p-[1px]"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient" />
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient" />
           <div className="relative bg-black/20 backdrop-blur-sm hover:bg-white/10 text-white font-black text-xl py-3 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(249,115,22,0.6)] group-hover:shadow-[0_0_30px_rgba(249,115,22,0.8)] border border-white/20">
             <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
               発火

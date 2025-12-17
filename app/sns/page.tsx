@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
 import { SocialTab } from "@/components/Social/SocialTab";
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
-import { X } from "lucide-react";
+import { Volume2, VolumeX, X } from "lucide-react";
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
@@ -19,6 +19,7 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
 
@@ -36,6 +37,41 @@ export default function CommunityPage() {
       window.history.replaceState(null, "", url.toString());
     }
   };
+
+  useEffect(() => {
+    const stored = localStorage.getItem("hanabi_sound_enabled");
+    if (stored === "true") {
+      setSoundEnabled(true);
+    } else {
+      setSoundEnabled(false);
+      if (stored === null) {
+        localStorage.setItem("hanabi_sound_enabled", "false");
+      }
+    }
+  }, []);
+
+  const toggleSound = () => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem("hanabi_sound_enabled", next ? "true" : "false");
+      return next;
+    });
+  };
+
+  const VolumeToggleButton = ({ className = "" }: { className?: string }) => (
+    <button
+      type="button"
+      aria-pressed={soundEnabled}
+      aria-label={soundEnabled ? "音量ON" : "音量OFF"}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleSound();
+      }}
+      className={`relative inline-flex h-10 w-10 items-center justify-center bg-black/40 text-white transition-colors hover:border-orange-400/70 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${className}`}
+    >
+      {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+    </button>
+  );
 
   // Show loading state while checking auth
   if (loading) {
@@ -173,7 +209,11 @@ export default function CommunityPage() {
 
       <div className="flex w-full">
         {/* Left Sidebar */}
-        <Sidebar onPostClick={handleComposeClick} />
+        <Sidebar
+          onPostClick={handleComposeClick}
+          soundEnabled={soundEnabled}
+          onToggleSound={toggleSound}
+        />
 
         {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
             Adjusted to top-left align with padding to match "below Ignite button"
@@ -221,14 +261,17 @@ export default function CommunityPage() {
         </div>
 
         {/* Main Feed (Right Side) */}
-        <main className="w-full lg:w-[600px] lg:flex-none border-l border-white/20 min-h-screen relative">
-          <div className="lg:hidden sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-sm">
-            <Link
-              href="/"
-              className="m-3 flex items-center justify-center text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
-            >
-              HANABI
-            </Link>
+        <main className="w-full lg:w-[600px] lg:flex-none min-h-screen relative">
+          <div className="lg:hidden sticky top-0 z-20 bg-black/80 backdrop-blur-sm">
+            <div className="flex items-center justify-start gap-12 px-3 py-2">
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)] leading-none select-none"
+              >
+                HANABI
+              </Link>
+              <VolumeToggleButton />
+            </div>
           </div>
 
           <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
@@ -289,6 +332,7 @@ export default function CommunityPage() {
                 showCompose={showCompose}
                 onComposeClick={handleComposeClick}
                 onPendingPostsChange={setPendingPosts}
+                soundEnabled={soundEnabled}
               />
             </div>
           </div>
