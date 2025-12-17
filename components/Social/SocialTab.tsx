@@ -3,8 +3,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
+import { FireworksOverlay } from "./FireworksOverlay";
 import { db, storage } from "@/lib/firebase";
-import { collection, deleteDoc, onSnapshot, orderBy, query, doc, where } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  doc,
+  where,
+} from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import {
   DndContext,
@@ -16,7 +25,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Search } from "lucide-react";
+import { Send, Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,18 +59,37 @@ const SEED_POSTS: PostData[] = [
 export function SocialTab({
   tab = "everyone",
   showCompose = false,
+  onComposeClick,
+  onPendingPostsChange,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
+  onComposeClick?: () => void;
+  onPendingPostsChange?: (pendingPosts: PostData[]) => void;
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
   const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
   const [ready, setReady] = useState(false);
   const cleanedRef = useRef<Set<string>>(new Set());
-  const [activeId, setActiveId] = useState<string | null>(null); // Unused but kept if needed for drag overlay later
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hideNegative, setHideNegative] = useState(false);
+
+  // New state for the 10-second pending post animation (Array)
+  const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+
+  useEffect(() => {
+    const checkSetting = () => {
+      setHideNegative(localStorage.getItem("hanabi_hide_negative") === "true");
+    };
+    checkSetting();
+
+    const handleStorageChange = () => checkSetting();
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const deleteAttachmentFromStorage = async (url?: string) => {
     if (!url) return;
@@ -73,7 +101,8 @@ export function SocialTab({
     }
   };
 
-  const deletePostAssets = async (post?: PostData) => {
+  type PostAssets = Pick<PostData, "attachment" | "image">;
+  const deletePostAssets = async (post?: PostAssets) => {
     if (!post) return;
     const url = post.attachment?.url ?? post.image;
     await deleteAttachmentFromStorage(url);
@@ -82,17 +111,20 @@ export function SocialTab({
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 10, // Require 10px movement before drag starts (allows clicks)
+        distance: 10,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250, // Long press to drag on touch, allowing scrolling
+        delay: 250,
         tolerance: 5,
       },
     })
   );
   const [showFireworks, setShowFireworks] = useState(false);
+  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
+    null
+  );
 
   // Subscribe to Firestore in realtime
   useEffect(() => {
@@ -144,7 +176,7 @@ export function SocialTab({
             fetched.push({
               id: d.id,
               author: data.author ?? "Unknown",
-              authorId: data.authorId ?? undefined, // Read authorId
+              authorId: data.authorId ?? undefined,
               avatar: data.avatar ?? "from-orange-500 to-red-600",
               photoURL: data.photoURL ?? undefined,
               content: data.content ?? "",
@@ -180,9 +212,26 @@ export function SocialTab({
     }
   }, [tab, user]);
 
-  const handleNewPost = (_newPost: PostData) => {
-    // Optimistic update removed to prevent duplicate keys with real-time listener
-    // setPosts((prev) => [newPost, ...prev]);
+  // Synchronize local pending posts with parent (CommunityPage)
+  useEffect(() => {
+    if (onPendingPostsChange) {
+      onPendingPostsChange(pendingPosts);
+    }
+  }, [pendingPosts, onPendingPostsChange]);
+
+  const handleNewPost = (newPost: PostData) => {
+    // Choose sentiment preset for fireworks and activate
+    const label = newPost.sentiment?.label ?? null;
+    setFireworksSentiment(label);
+    setShowFireworks(true);
+
+    // Add to pending array
+    setPendingPosts((current) => [...current, newPost]);
+
+    // Remove this specific post after 10s
+    setTimeout(() => {
+      setPendingPosts((current) => current.filter((p) => p.id !== newPost.id));
+    }, 10000);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -197,20 +246,15 @@ export function SocialTab({
       const postId = active.id as string;
       const targetPost = posts.find((p) => p.id === postId);
 
-      // Trigger effect
       setDropTrigger(Date.now());
-
-      // Delete from local state instantly
       setPosts((prev) => prev.filter((p) => p.id !== postId));
 
-      // Delete from Firestore and Storage if they exist there
       try {
         await deletePostAssets(targetPost);
         await deleteDoc(doc(db, "posts", postId));
         console.log("Deleted post", postId);
       } catch (e) {
         console.error("Error deleting post", e);
-        // Could revert state here if strict consistency needed
       }
     }
   };
@@ -223,7 +267,19 @@ export function SocialTab({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      <div className="w-full relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Mobile "Center" Shim - if on mobile, show pending posts here at top */}
+        <div className="lg:hidden mb-6 flex flex-col gap-4">
+          {pendingPosts.map((p) => (
+            <div
+              key={p.id}
+              className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6"
+            >
+              <PostCard post={p} onLoginRequired={() => {}} />
+            </div>
+          ))}
+        </div>
+
         {/* Search Bar */}
         <div className="mb-4 sm:mb-6 relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">
@@ -239,6 +295,28 @@ export function SocialTab({
           />
         </div>
 
+        {/* Mobile Compose Button */}
+        <div className="mb-4 lg:hidden">
+          <button
+            type="button"
+            onClick={onComposeClick}
+            className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-black/20 px-6 py-3 text-xl font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all hover:bg-white/10 hover:shadow-[0_0_30px_rgba(249,115,22,0.8)]"
+          >
+            <span
+              className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient"
+              aria-hidden="true"
+            />
+            <span className="relative flex items-center justify-center gap-2">
+              <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
+                発火
+              </span>
+              <span className="text-xs font-normal text-white/70 tracking-widest">
+                IGNITE
+              </span>
+            </span>
+          </button>
+        </div>
+
         {user && showCompose && (
           <CreatePost
             onPost={handleNewPost}
@@ -246,14 +324,23 @@ export function SocialTab({
             isPrivate={tab === "solo"}
           />
         )}
+
         <div className="space-y-3 sm:space-y-4 pb-24">
-          {" "}
-          {/* Added padding for TrashBin */}
           {!ready && (
-            <div className="text-white/50 text-xs sm:text-sm">Loading posts...</div>
+            <div className="text-white/50 text-xs sm:text-sm">
+              Loading posts...
+            </div>
           )}
           {posts
             .filter((post) => {
+              // Hide pending posts from timeline
+              if (pendingPosts.some((p) => p.id === post.id)) return false;
+
+              // Hide negative if setting enabled
+              if (hideNegative && post.sentiment?.label === "negative") {
+                return false;
+              }
+
               if (!searchQuery.trim()) return true;
               const q = searchQuery.toLowerCase();
               return (
@@ -268,14 +355,11 @@ export function SocialTab({
                 post={post}
                 isOwner={user?.uid === post.authorId}
                 onLoginRequired={() => {}}
+                className="animate-in fade-in duration-700 fill-mode-backwards slide-in-from-top-8 lg:slide-in-from-top-0 lg:slide-in-from-left-48"
               />
             ))}
         </div>
 
-        {/* Render TrashBin if user is logged in (or always if we allow guest deletes locally?) 
-            Let's show it always for interaction feel, but maybe disable logic? 
-            Assuming user works for now based on context. 
-        */}
         <TrashBin dropTrigger={dropTrigger} />
 
         <DragOverlay>
@@ -285,6 +369,14 @@ export function SocialTab({
             </div>
           ) : null}
         </DragOverlay>
+        <FireworksOverlay
+          isActive={showFireworks}
+          sentimentLabel={fireworksSentiment}
+          onComplete={() => {
+            setShowFireworks(false);
+            setFireworksSentiment(null);
+          }}
+        />
       </div>
     </DndContext>
   );

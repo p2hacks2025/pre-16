@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
 import { SocialTab } from "@/components/Social/SocialTab";
@@ -10,8 +11,9 @@ import { X } from "lucide-react";
 
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
-
-// ... existing imports ...
+import { PostCard, PostData } from "@/components/Social/PostCard";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import type { AutoAnimationPlugin } from "@formkit/auto-animate";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
@@ -21,8 +23,53 @@ export default function CommunityPage() {
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
 
+  // Pending posts state for animation in left column (Array)
+  const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+
+  // Smooth animation for list sorting/removal - Custom config to prevent flicker
+  const customAnimationPlugin: AutoAnimationPlugin = (
+    el,
+    action,
+    newCoords,
+    oldCoords
+  ) => {
+    // New items: let CSS (.animate-broadcast) handle the entry
+    if (action === "add") {
+      return new KeyframeEffect(el, [], { duration: 0 });
+    }
+    // Removed items: Kill visibility immediately to prevent CSS animation restart
+    // Return small duration to ensure 'remain' callback is triggered for siblings
+    if (action === "remove") {
+      (el as HTMLElement).style.opacity = "0";
+      return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
+    }
+    // Remaining items: Slide them to their new position (e.g. up)
+    if (action === "remain") {
+      if (!oldCoords || !newCoords) {
+        return new KeyframeEffect(el, [], { duration: 0 });
+      }
+      const deltaX = oldCoords.left - newCoords.left;
+      const deltaY = oldCoords.top - newCoords.top;
+      const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
+      const end = { transform: `translate(0, 0)` };
+      // Slower duration + smooth easing for 'null-to' feel
+      return new KeyframeEffect(el, [start, end], {
+        duration: 500,
+        easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
+      });
+    }
+    return new KeyframeEffect(el, [], { duration: 0 });
+  };
+
+  const [animationParent] = useAutoAnimate<HTMLElement>(customAnimationPlugin);
+
+  const searchParams = useSearchParams();
+  const isSettingsOpen = searchParams.get("tab") === "settings";
+  const router = useRouter();
+
   const handleCloseSettings = () => {
-    setIsSettingsOpen(false);
+    // Remove tab param by replacing
+    router.replace("/sns");
   };
 
   // Show loading state while checking auth
@@ -33,6 +80,14 @@ export default function CommunityPage() {
       </div>
     );
   }
+
+  const handleComposeClick = () => {
+    if (user) {
+      setShowCompose((prev) => !prev);
+    } else {
+      setShowLoginPrompt(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex justify-center relative">
@@ -68,7 +123,7 @@ export default function CommunityPage() {
 
       {/* Login Prompt for Guests */}
       {!user && (
-        <div className="fixed top-3 sm:top-4 right-3 sm:right-4 z-50 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="fixed top-24 sm:top-28 right-3 sm:right-4 z-40 bg-gradient-to-r from-orange-500/90 to-red-600/90 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-4 max-w-sm shadow-lg animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-2 flex-1">
               <p className="font-semibold text-white text-sm sm:text-base">
@@ -95,6 +150,43 @@ export default function CommunityPage() {
         </div>
       )}
 
+      <div className="lg:hidden fixed bottom-4 left-4 z-50">
+        {user ? (
+          <Link
+            href="/?tab=settings"
+            className="relative flex h-12 w-12 aspect-square items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors hover:border-white/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          >
+            <span className="sr-only">プロフィール設定</span>
+            <div className="flex h-full w-full items-center justify-center p-1">
+              {profile?.photoURL ? (
+                <img
+                  src={profile.photoURL}
+                  alt={profile.displayName}
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`h-full w-full rounded-full bg-gradient-to-tr ${
+                    profile?.avatarGradient || "from-blue-500 to-purple-600"
+                  }`}
+                />
+              )}
+            </div>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowLoginPrompt(true)}
+            className="relative flex h-12 w-12 aspect-square items-center justify-center rounded-full border border-white/20 bg-black/60 text-white shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors hover:border-white/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+          >
+            <span className="sr-only">ログイン</span>
+            <div className="flex h-full w-full items-center justify-center p-1">
+              <div className="h-full w-full rounded-full bg-white/10" />
+            </div>
+          </button>
+        )}
+      </div>
+
       {/* Login Modal */}
       {showLoginPrompt && !user && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -114,19 +206,50 @@ export default function CommunityPage() {
         </div>
       )}
 
+
       <div className="flex w-full">
         {/* Left Sidebar */}
-        <Sidebar
-          onPostClick={() =>
-            user ? setShowCompose(!showCompose) : setShowLoginPrompt(true)
-          }
-        />
+        <Sidebar onPostClick={handleComposeClick} />
 
-        {/* Center Spacer (pushes feed to right) */}
-        <div className="hidden lg:block flex-1 border-r border-white/10" />
+        {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
+            Adjusted to top-left align with padding to match "below Ignite button"
+        */}
+        <div
+          ref={animationParent}
+          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-start justify-start pt-[280px] pl-8 relative gap-6"
+        >
+          {pendingPosts.length > 0 ? (
+            <>
+              {pendingPosts.map((post) => (
+                <div key={post.id} className="w-full max-w-md">
+                  {/* Inner wrapper handles the visual animation, isolated from layout shifts */}
+                  <div className="w-full animate-broadcast">
+                    <PostCard post={post} onLoginRequired={() => {}} />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="text-white/10 w-full h-full flex flex-col items-center justify-center select-none pb-[280px]">
+              <div className="text-8xl mb-4 opacity-50 grayscale">🌋</div>
+              <div className="text-sm tracking-[0.2em] font-light">
+                NO SIGNAL
+              </div>
+            </div>
+          )}
+        </div>
 
-        {/* Main Feed (Moved to Right) */}
+        {/* Main Feed (Right Side) */}
         <main className="w-full lg:w-[600px] lg:flex-none border-l border-white/20 min-h-screen relative">
+          <div className="lg:hidden sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+            <Link
+              href="/"
+              className="m-3 flex items-center justify-center text-3xl font-black tracking-tight text-transparent bg-gradient-to-br from-orange-400 via-red-500 to-purple-600 bg-clip-text drop-shadow-[0_0_20px_rgba(249,115,22,0.8)]"
+            >
+              HANABI
+            </Link>
+          </div>
+
           <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
             <div className="flex w-full">
               <div
@@ -179,7 +302,12 @@ export default function CommunityPage() {
 
           <div className="pb-20">
             <div className="p-3 sm:p-4">
-              <SocialTab tab={activeTab} showCompose={showCompose} />
+              <SocialTab
+                tab={activeTab}
+                showCompose={showCompose}
+                onComposeClick={handleComposeClick}
+                onPendingPostsChange={setPendingPosts}
+              />
             </div>
           </div>
         </main>

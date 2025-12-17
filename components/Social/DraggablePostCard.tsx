@@ -9,12 +9,14 @@ interface DraggablePostCardProps {
   post: PostData;
   onLoginRequired: () => void;
   isOwner?: boolean;
+  className?: string;
 }
 
 export function DraggablePostCard({
   post,
   onLoginRequired,
   isOwner = false,
+  className = "",
 }: DraggablePostCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: post.id,
@@ -31,7 +33,7 @@ export function DraggablePostCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="touch-none"
+      className={`touch-none ${className}`}
     >
       <PostCard post={post} onLoginRequired={onLoginRequired} />
     </div>

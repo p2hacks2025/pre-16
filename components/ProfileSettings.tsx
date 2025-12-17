@@ -206,6 +206,20 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
           {saving ? "保存中..." : "保存"}
         </button>
 
+        {/* App Settings */}
+        <div className="pt-6 border-t border-white/10 space-y-4">
+          <h3 className="text-lg font-bold text-white/90">アプリ設定</h3>
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="hideNegative"
+              className="text-sm font-medium text-white/80"
+            >
+              ネガティブな投稿を非表示にする
+            </label>
+            <HideNegativeToggle />
+          </div>
+        </div>
+
         <div className="pt-4 border-t border-white/10">
           <button
             type="button"
@@ -218,5 +232,38 @@ export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
         </div>
       </form>
     </div>
+  );
+}
+
+function HideNegativeToggle() {
+  const [enabled, setEnabled] = useState(false);
+
+  React.useEffect(() => {
+    const v = localStorage.getItem("hanabi_hide_negative") === "true";
+    setEnabled(v);
+  }, []);
+
+  const toggle = () => {
+    const newValue = !enabled;
+    setEnabled(newValue);
+    localStorage.setItem("hanabi_hide_negative", String(newValue));
+    // Dispatch event so other tabs/components know immediately
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+        enabled ? "bg-orange-500" : "bg-white/20"
+      }`}
+    >
+      <span
+        className={`${
+          enabled ? "translate-x-6" : "translate-x-1"
+        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+      />
+    </button>
   );
 }

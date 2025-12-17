@@ -1,29 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Heart,
-  MessageCircle,
-  Share2,
-  MoreHorizontal,
-  Trash2,
-  Send,
-} from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  onSnapshot,
-  query,
-  orderBy,
-  doc,
-  getDoc,
-  setDoc,
-  deleteDoc,
-  increment,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, deleteDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -53,37 +33,15 @@ export interface PostData {
   expiresAt?: number; // epoch ms when the post should expire
 }
 
-interface ReplyData {
-  author?: string;
-  uid?: string;
-  photoURL?: string;
-  content?: string;
-  timestamp?: { toMillis: () => number };
-}
-
 interface PostCardProps {
   post: PostData;
   onLoginRequired?: () => void;
 }
 
 export function PostCard({ post, onLoginRequired }: PostCardProps) {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const [showReplyBox, setShowReplyBox] = useState(false);
-  const [replyText, setReplyText] = useState("");
-  const [submittingReply, setSubmittingReply] = useState(false);
-  const [replies, setReplies] = useState<
-    Array<{
-      id: string;
-      author: string;
-      content: string;
-      photoURL?: string;
-      timestamp: number;
-    }>
-  >([]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -97,50 +55,6 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // Initialize like state and subscribe to post's like count
-  useEffect(() => {
-    // live likes count from post document
-    const postRef = doc(db, "posts", post.id);
-    const unsub = onSnapshot(postRef, (snap) => {
-      const data = snap.data() as any;
-      if (data?.likes !== undefined) {
-        setLikeCount(data.likes as number);
-      }
-    });
-
-    // user like state
-    const init = async () => {
-      if (!user) return;
-      const likeRef = doc(db, "posts", post.id, "likes", user.uid);
-      const likeDoc = await getDoc(likeRef);
-      setLiked(likeDoc.exists());
-    };
-    init();
-
-    return () => unsub();
-  }, [db, post.id, user?.uid]);
-
-  const handleLike = async () => {
-    if (!user) return; // require auth
-    const postRef = doc(db, "posts", post.id);
-    const likeRef = doc(db, "posts", post.id, "likes", user.uid);
-    try {
-      if (liked) {
-        // Unlike: remove like doc and decrement counter
-        await deleteDoc(likeRef);
-        await updateDoc(postRef, { likes: increment(-1) });
-        setLiked(false);
-      } else {
-        // Like: create like doc and increment counter
-        await setDoc(likeRef, { uid: user.uid, createdAt: serverTimestamp() });
-        await updateDoc(postRef, { likes: increment(1) });
-        setLiked(true);
-      }
-    } catch (e) {
-      console.error("Failed to toggle like", e);
-    }
-  };
 
   const deleteAttachmentFromStorage = async (url?: string) => {
     if (!url) return;
@@ -173,48 +87,6 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
     });
   };
 
-  // Subscribe replies for this post
-  useEffect(() => {
-    const repliesRef = collection(db, "posts", post.id, "replies");
-    const q = query(repliesRef, orderBy("timestamp", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => {
-        const data = d.data() as ReplyData;
-        return {
-          id: d.id,
-          author: data.author ?? "",
-          content: data.content ?? "",
-          photoURL: data.photoURL,
-          timestamp: (data.timestamp?.toMillis?.() ?? Date.now()) as number,
-        };
-      });
-      setReplies(list);
-    });
-
-    return () => unsub();
-  }, [post.id]);
-
-  const submitReply = async () => {
-    if (!user || !replyText.trim()) return;
-    setSubmittingReply(true);
-    try {
-      const repliesRef = collection(db, "posts", post.id, "replies");
-      await addDoc(repliesRef, {
-        author: user.displayName || "Anonymous",
-        uid: user.uid,
-        photoURL: user.photoURL || null,
-        content: replyText.trim(),
-        timestamp: serverTimestamp(),
-      });
-      setReplyText("");
-      setShowReplyBox(false);
-    } catch (e) {
-      console.error("Failed to submit reply", e);
-    } finally {
-      setSubmittingReply(false);
-    }
-  };
-
   return (
     <div className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group">
       <div className="p-3 sm:p-4 flex gap-2 sm:gap-4">
@@ -237,7 +109,9 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           {/* Header */}
           <div className="flex justify-between items-start relative gap-2">
             <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-              <span className="font-bold text-sm sm:text-base">{post.author}</span>
+              <span className="font-bold text-sm sm:text-base">
+                {post.author}
+              </span>
               <span className="text-white/40 text-xs sm:text-sm">
                 @{post.author.toLowerCase().replace(" ", "")}
               </span>
@@ -359,159 +233,6 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
               />
             </div>
           ) : null}
-
-          {/* Actions */}
-          <div className="flex justify-between items-center pt-2 text-white/50 max-w-full gap-1 sm:gap-2">
-            <button
-              onClick={() => {
-                if (!user) {
-                  onLoginRequired?.();
-                  return;
-                }
-                setShowReplyBox((v) => !v);
-              }}
-              className="flex items-center gap-1 sm:gap-2 hover:text-blue-400 group transition-colors text-xs sm:text-sm"
-            >
-              <MessageCircle
-                size={16}
-                className="sm:hidden group-hover:bg-blue-500/10 p-1 box-content rounded-full"
-              />
-              <MessageCircle
-                size={18}
-                className="hidden sm:block group-hover:bg-blue-500/10 p-1 box-content rounded-full"
-              />
-              <span className="hidden sm:inline">Reply</span>
-            </button>
-            <button
-              onClick={() => {
-                if (!user) {
-                  onLoginRequired?.();
-                  return;
-                }
-                handleLike();
-              }}
-              className={`flex items-center gap-1 sm:gap-2 group transition-colors text-xs sm:text-sm ${
-                liked ? "text-pink-500" : "hover:text-pink-500"
-              }`}
-            >
-              <Heart
-                size={16}
-                className="sm:hidden group-hover:bg-pink-500/10 p-1 box-content rounded-full transition-transform"
-              />
-              <Heart
-                size={18}
-                className={`hidden sm:block group-hover:bg-pink-500/10 p-1 box-content rounded-full transition-transform ${
-                  liked ? "fill-current scale-110" : ""
-                }`}
-              />
-              <span className="text-xs">{likeCount}</span>
-            </button>
-            <button
-              onClick={async () => {
-                const shareData = {
-                  title: `${post.author}の投稿`,
-                  text: post.content,
-                  url:
-                    typeof window !== "undefined"
-                      ? window.location.href
-                      : undefined,
-                } as ShareData;
-                try {
-                  if (navigator.share) {
-                    await navigator.share(shareData);
-                  } else {
-                    const url = shareData.url || "";
-                    const text = `${shareData.title}\n\n${shareData.text}\n\n${url}`;
-                    await navigator.clipboard.writeText(text);
-                    alert("共有内容をクリップボードにコピーしました。");
-                  }
-                } catch (e) {
-                  console.error("Share failed", e);
-                }
-              }}
-              className="flex items-center gap-1 sm:gap-2 hover:text-green-400 group transition-colors text-xs sm:text-sm"
-            >
-              <Share2
-                size={16}
-                className="sm:hidden group-hover:bg-green-500/10 p-1 box-content rounded-full"
-              />
-              <Share2
-                size={18}
-                className="hidden sm:block group-hover:bg-green-500/10 p-1 box-content rounded-full"
-              />
-              <span className="hidden sm:inline">Share</span>
-            </button>
-          </div>
-
-          {/* Reply input */}
-          {showReplyBox && (
-            <div className="mt-3 flex items-end gap-2">
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName ?? "You"}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs flex-shrink-0">
-                  You
-                </div>
-              )}
-              <div className="flex-1 flex items-center gap-2">
-                <input
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={
-                    user ? "返信を入力..." : "返信にはログインが必要です"
-                  }
-                  disabled={!user || submittingReply}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                />
-                <button
-                  onClick={submitReply}
-                  disabled={!user || submittingReply || !replyText.trim()}
-                  className="p-1.5 sm:p-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                >
-                  <Send size={16} className="sm:hidden" />
-                  <Send size={16} className="hidden sm:block" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Replies list */}
-          {replies.length > 0 && (
-            <div className="mt-4 space-y-3">
-              {replies.map((r) => (
-                <div key={r.id} className="flex gap-2 sm:gap-3">
-                  {r.photoURL ? (
-                    <img
-                      src={r.photoURL}
-                      alt={r.author}
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                      {r.author[0] || "?"}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-semibold text-white/90">
-                        {r.author}
-                      </span>
-                      <span className="text-xs text-white/40">
-                        {formatDate(r.timestamp)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-white/80 whitespace-pre-wrap">
-                      {r.content}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
