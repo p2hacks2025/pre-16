@@ -9,12 +9,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { X } from "lucide-react";
 
-// Removed useSearchParams/useRouter to avoid SSR prerender errors
+import { useSearchParams, useRouter } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import type { AutoAnimationPlugin } from "@formkit/auto-animate";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
@@ -26,55 +25,11 @@ export default function CommunityPage() {
   // Pending posts state for animation in left column (Array)
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
 
-  // Smooth animation for list sorting/removal - Custom config to prevent flicker
-  const customAnimationPlugin: AutoAnimationPlugin = (
-    el,
-    action,
-    newCoords,
-    oldCoords
-  ) => {
-    // New items: let CSS (.animate-broadcast) handle the entry
-    if (action === "add") {
-      return new KeyframeEffect(el, [], { duration: 0 });
-    }
-    // Removed items: Kill visibility immediately to prevent CSS animation restart
-    // Return small duration to ensure 'remain' callback is triggered for siblings
-    if (action === "remove") {
-      (el as HTMLElement).style.opacity = "0";
-      return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
-    }
-    // Remaining items: Slide them to their new position (e.g. up)
-    if (action === "remain") {
-      if (!oldCoords || !newCoords) {
-        return new KeyframeEffect(el, [], { duration: 0 });
-      }
-      const deltaX = oldCoords.left - newCoords.left;
-      const deltaY = oldCoords.top - newCoords.top;
-      const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
-      const end = { transform: `translate(0, 0)` };
-      // Slower duration + smooth easing for 'null-to' feel
-      return new KeyframeEffect(el, [start, end], {
-        duration: 500,
-        easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
-      });
-    }
-    return new KeyframeEffect(el, [], { duration: 0 });
-  };
-
-  const [animationParent] = useAutoAnimate<HTMLElement>(customAnimationPlugin);
-
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // Initialize isSettingsOpen from URL query on client side
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      setIsSettingsOpen(params.get("tab") === "settings");
-    }
-  }, []);
+  const searchParams = useSearchParams();
+  const isSettingsOpen = searchParams.get("tab") === "settings";
+  const router = useRouter();
 
   const handleCloseSettings = () => {
-    setIsSettingsOpen(false);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.delete("tab");
@@ -223,29 +178,46 @@ export default function CommunityPage() {
         {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
             Adjusted to top-left align with padding to match "below Ignite button"
         */}
-        <div
-          ref={animationParent}
-          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-center justify-start pt-[280px] relative gap-6"
-        >
-          {pendingPosts.length > 0 ? (
-            <>
-              {pendingPosts.map((post) => (
-                <div key={post.id} className="w-full max-w-md">
-                  {/* Inner wrapper handles the visual animation, isolated from layout shifts */}
+        <div className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-center justify-start pt-[280px] relative gap-6">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {pendingPosts.length > 0 ? (
+              pendingPosts.map((post) => (
+                <motion.div
+                  key={post.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9, y: 50 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.9,
+                    transition: { duration: 0.2 },
+                  }}
+                  transition={{
+                    layout: { duration: 0.4, ease: "easeOut" },
+                    opacity: { duration: 0.3 },
+                  }}
+                  className="w-full max-w-md"
+                >
+                  {/* Inner wrapper handles the visual animation (10s broadcast sequence) */}
                   <div className="w-full animate-broadcast">
                     <PostCard post={post} onLoginRequired={() => {}} />
                   </div>
+                </motion.div>
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-white/10 w-full h-full flex flex-col items-center justify-center select-none pb-[280px] absolute inset-0"
+              >
+                <div className="text-8xl mb-4 opacity-50 grayscale">🌋</div>
+                <div className="text-sm tracking-[0.2em] font-light">
+                  NO SIGNAL
                 </div>
-              ))}
-            </>
-          ) : (
-            <div className="text-white/10 w-full h-full flex flex-col items-center justify-center select-none pb-[280px]">
-              <div className="text-8xl mb-4 opacity-50 grayscale">🌋</div>
-              <div className="text-sm tracking-[0.2em] font-light">
-                NO SIGNAL
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Main Feed (Right Side) */}
@@ -312,6 +284,7 @@ export default function CommunityPage() {
           <div className="pb-20">
             <div className="p-3 sm:p-4">
               <SocialTab
+                key={activeTab}
                 tab={activeTab}
                 showCompose={showCompose}
                 onComposeClick={handleComposeClick}

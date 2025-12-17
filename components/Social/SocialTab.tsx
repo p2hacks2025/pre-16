@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
@@ -80,6 +81,10 @@ export function SocialTab({
   // New state for the 10-second pending post animation (Array)
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
 
+  // Custom animation plugin for smooth slide when posts transition
+  // Skip "add" animation - let CSS handle new post entry to avoid conflicts
+  // Only handle "remain" for smooth sliding of existing posts (ヌルッと上にスライド)
+
   useEffect(() => {
     const checkSetting = () => {
       setHideNegative(localStorage.getItem("hanabi_hide_negative") === "true");
@@ -91,22 +96,28 @@ export function SocialTab({
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const deleteAttachmentFromStorage = React.useCallback(async (url?: string) => {
-    if (!url) return;
-    try {
-      const fileRef = ref(storage, url);
-      await deleteObject(fileRef);
-    } catch (err) {
-      console.warn("Failed to delete attachment from storage", err);
-    }
-  }, []);
+  const deleteAttachmentFromStorage = React.useCallback(
+    async (url?: string) => {
+      if (!url) return;
+      try {
+        const fileRef = ref(storage, url);
+        await deleteObject(fileRef);
+      } catch (err) {
+        console.warn("Failed to delete attachment from storage", err);
+      }
+    },
+    []
+  );
 
   type PostAssets = Pick<PostData, "attachment" | "image">;
-  const deletePostAssets = React.useCallback(async (post?: PostAssets) => {
-    if (!post) return;
-    const url = post.attachment?.url ?? post.image;
-    await deleteAttachmentFromStorage(url);
-  }, [deleteAttachmentFromStorage]);
+  const deletePostAssets = React.useCallback(
+    async (post?: PostAssets) => {
+      if (!post) return;
+      const url = post.attachment?.url ?? post.image;
+      await deleteAttachmentFromStorage(url);
+    },
+    [deleteAttachmentFromStorage]
+  );
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -134,11 +145,11 @@ export function SocialTab({
       if (tab === "solo") {
         if (!user) {
           // Defer state updates to avoid calling setState synchronously inside an effect
-          queueMicrotask(() => {
+          const timer = setTimeout(() => {
             setPosts([]);
             setReady(true);
-          });
-          return;
+          }, 0);
+          return () => clearTimeout(timer);
         }
         q = query(
           collection(db, "posts"),
@@ -210,7 +221,9 @@ export function SocialTab({
                     );
                   }, 10000);
 
-                  return [...prev, newPost];
+                  return [...prev, newPost].sort(
+                    (a, b) => a.timestamp - b.timestamp
+                  );
                 });
               }
             }
@@ -301,7 +314,7 @@ export function SocialTab({
     // Add to pending array
     setPendingPosts((current) => {
       if (current.some((p) => p.id === newPost.id)) return current;
-      return [...current, newPost];
+      return [...current, newPost].sort((a, b) => a.timestamp - b.timestamp);
     });
 
     // Remove this specific post after 10s
@@ -401,40 +414,59 @@ export function SocialTab({
           />
         )}
 
-        <div className="space-y-3 sm:space-y-4 pb-24">
+        {/* List Container with overflow-anchor: none to prevent browser scroll jumping */}
+        <motion.div
+          layout
+          style={{ overflowAnchor: "none" }}
+          className="flex flex-col gap-3 sm:gap-4 pb-24"
+        >
           {!ready && (
             <div className="text-white/50 text-xs sm:text-sm">
               Loading posts...
             </div>
           )}
-          {posts
-            .filter((post) => {
-              // Hide pending posts from timeline
-              if (pendingPosts.some((p) => p.id === post.id)) return false;
+          <AnimatePresence mode="popLayout" initial={false}>
+            {posts
+              .filter((post) => {
+                // Hide pending posts from timeline
+                if (pendingPosts.some((p) => p.id === post.id)) return false;
 
-              // Hide negative if setting enabled
-              if (hideNegative && post.sentiment?.label === "negative") {
-                return false;
-              }
+                // Hide negative if setting enabled
+                if (hideNegative && post.sentiment?.label === "negative") {
+                  return false;
+                }
 
-              if (!searchQuery.trim()) return true;
-              const q = searchQuery.toLowerCase();
-              return (
-                post.content.toLowerCase().includes(q) ||
-                post.author.toLowerCase().includes(q) ||
-                post.attachment?.name.toLowerCase().includes(q)
-              );
-            })
-            .map((post) => (
-              <DraggablePostCard
-                key={post.id}
-                post={post}
-                isOwner={user?.uid === post.authorId}
-                onLoginRequired={() => {}}
-                className="animate-in fade-in duration-700 fill-mode-backwards slide-in-from-top-8 lg:slide-in-from-top-0 lg:slide-in-from-left-48"
-              />
-            ))}
-        </div>
+                if (!searchQuery.trim()) return true;
+                const q = searchQuery.toLowerCase();
+                return (
+                  post.content.toLowerCase().includes(q) ||
+                  post.author.toLowerCase().includes(q) ||
+                  post.attachment?.name.toLowerCase().includes(q)
+                );
+              })
+              .map((post) => (
+                <motion.div
+                  key={post.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                  transition={{
+                    layout: { duration: 0.3, ease: "easeOut" },
+                    opacity: { duration: 0.2 },
+                  }}
+                >
+                  <DraggablePostCard
+                    post={post}
+                    isOwner={user?.uid === post.authorId}
+                    onLoginRequired={() => {}}
+                    // Removed conflicting CSS animations as Framer Motion handles entry/exit
+                    className=""
+                  />
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </motion.div>
 
         <TrashBin dropTrigger={dropTrigger} />
 
@@ -448,7 +480,11 @@ export function SocialTab({
         <FireworksOverlay
           isActive={showFireworks}
           sentimentLabel={fireworksSentiment}
-          sound={{ enabled: true, files: ['/sounds/fireworks.mp3'], volume: { min: 90, max: 100 } }}
+          sound={{
+            enabled: true,
+            files: ["/sounds/fireworks.mp3"],
+            volume: { min: 90, max: 100 },
+          }}
           onComplete={() => {
             setShowFireworks(false);
             setFireworksSentiment(null);
