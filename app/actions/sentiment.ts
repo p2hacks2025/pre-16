@@ -86,14 +86,15 @@ export async function analyzeSentimentAction(
     }
   }
 
-  // Force binary classification as requested
-  let label: "positive" | "negative" = "positive";
+  // Force classification as requested
+  let label: "positive" | "negative" | "neutral" = "neutral";
 
   if (score < 0) {
     label = "negative";
-  } else {
-    // score >= 0 defaults to positive
+  } else if (score > 0) {
     label = "positive";
+  } else {
+    label = "neutral";
   }
 
   return { score, label };
