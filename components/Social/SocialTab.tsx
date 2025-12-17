@@ -246,11 +246,20 @@ export function SocialTab({
           <button
             type="button"
             onClick={onComposeClick}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-red-600 px-6 py-2 text-sm font-bold uppercase tracking-[0.05em] text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-400 hover:to-red-500 hover:shadow-orange-500/40"
+            className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-black/20 px-6 py-3 text-xl font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all hover:bg-white/10 hover:shadow-[0_0_30px_rgba(249,115,22,0.8)]"
           >
-            <Send size={16} />
-            <span className="text-base font-black leading-none">発火</span>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-white/80">IGNITE</span>
+            <span
+              className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient"
+              aria-hidden="true"
+            />
+            <span className="relative flex items-center justify-center gap-2">
+              <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
+                発火
+              </span>
+              <span className="text-xs font-normal text-white/70 tracking-widest">
+                IGNITE
+              </span>
+            </span>
           </button>
         </div>
 
