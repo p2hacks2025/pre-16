@@ -8,8 +8,7 @@ let sentimentDictionary: Record<string, number> | null = null;
 
 const DATA_FILE_PATH = path.join(
   process.cwd(),
-  "lib",
-  "data",
+  "public",
   "pn.csv.m3.120408.trim"
 );
 
