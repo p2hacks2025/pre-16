@@ -2,15 +2,40 @@
 
 import fs from "fs";
 import path from "path";
+import kuromoji from "kuromoji";
 
-// Dictionary cache to avoid reading file on every request
+// Cache to avoid re-initializing on every request
 let sentimentDictionary: Record<string, number> | null = null;
+let tokenizerInstance: kuromoji.Tokenizer<kuromoji.IpadicFeatures> | null = null;
+let tokenizerPromise: Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>> | null = null;
 
 const DATA_FILE_PATH = path.join(
   process.cwd(),
   "public",
   "pn.csv.m3.120408.trim"
 );
+
+// Initialize Kuromoji tokenizer (cached)
+async function getTokenizer(): Promise<kuromoji.Tokenizer<kuromoji.IpadicFeatures>> {
+  if (tokenizerInstance) return tokenizerInstance;
+  
+  // Prevent multiple simultaneous initializations
+  if (!tokenizerPromise) {
+    tokenizerPromise = new Promise((resolve, reject) => {
+      kuromoji.builder({ dicPath: "node_modules/kuromoji/dict" }).build((err, tokenizer) => {
+        if (err) {
+          console.error("Failed to initialize Kuromoji tokenizer:", err);
+          reject(err);
+        } else {
+          tokenizerInstance = tokenizer;
+          resolve(tokenizer);
+        }
+      });
+    });
+  }
+  
+  return tokenizerPromise;
+}
 
 async function loadDictionary() {
   if (sentimentDictionary) return sentimentDictionary;
@@ -32,17 +57,15 @@ async function loadDictionary() {
           dictionary[word] = 1;
         } else if (label === "n") {
           dictionary[word] = -1;
-        } else {
-          // 'e' or others are neutral, ignore or 0
-          // dictionary[word] = 0;
         }
+        // Ignore neutral ('e') words to reduce dictionary size
       }
     }
     sentimentDictionary = dictionary;
+    console.log(`Loaded sentiment dictionary with ${Object.keys(dictionary).length} words`);
     return dictionary;
   } catch (error) {
     console.error("Failed to load sentiment dictionary:", error);
-    // Return empty if file missing (should not happen in prod if verified)
     return {};
   }
 }
@@ -55,46 +78,49 @@ export type SentimentResult = {
 export async function analyzeSentimentAction(
   text: string
 ): Promise<SentimentResult> {
-  const dictionary = await loadDictionary();
-  let score = 0;
-
-  // Simple string matching.
-  // Note: This matches anywhere in the string.
-  // Ideally, one would use a tokenizer (like Kuromoji.js or MeCab) but that requires more setup.
-  // For a basic implementation as requested, we iterate through keys.
-  // OPTIMIZATION: Iterating through a large dictionary for every request is slow.
-  // However, given the constraints and "no tokenizer", checking if `text.includes(word)` for all polarized words is one way.
-  // To make it slightly faster, we can just scan the text? No, Japanese text has no spaces.
-  // We will iterate dictionary keys.
-
-  if (!text) {
-    return { score: 0, label: "positive" };
+  // Early return for empty text
+  if (!text || !text.trim()) {
+    return { score: 0, label: "neutral" };
   }
 
-  for (const [word, value] of Object.entries(dictionary)) {
-    // If the word is in the text, add its value matches count times?
-    // text.includes(word) is simplest.
-    // Issues: "happy" might be inside "unhappy" (in English). In Japanese less likely to be false positive inverse, but possible.
-    // We will do a simple inclusion check.
+  try {
+    const [dictionary, tokenizer] = await Promise.all([
+      loadDictionary(),
+      getTokenizer()
+    ]);
 
-    // Count occurrences
-    const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); // escape regex chars
-    const matches = text.match(regex);
-    if (matches) {
-      score += value * matches.length;
+    // Tokenize Japanese text using Kuromoji
+    const tokens = tokenizer.tokenize(text);
+    let score = 0;
+
+    // Check each token's surface form and base form against dictionary
+    for (const token of tokens) {
+      const surface = token.surface_form;
+      const baseForm = token.basic_form;
+
+      // Check surface form first (exact match)
+      if (dictionary[surface] !== undefined) {
+        score += dictionary[surface];
+      }
+      // If different, also check base form (e.g., conjugated verbs)
+      else if (baseForm !== surface && dictionary[baseForm] !== undefined) {
+        score += dictionary[baseForm];
+      }
     }
+
+    // Classify sentiment based on score
+    let label: "positive" | "negative" | "neutral" = "neutral";
+
+    if (score < 0) {
+      label = "negative";
+    } else if (score > 0) {
+      label = "positive";
+    }
+
+    return { score, label };
+  } catch (error) {
+    console.error("Sentiment analysis error:", error);
+    // Fallback to neutral on error
+    return { score: 0, label: "neutral" };
   }
-
-  // Force classification as requested
-  let label: "positive" | "negative" | "neutral" = "neutral";
-
-  if (score < 0) {
-    label = "negative";
-  } else if (score > 0) {
-    label = "positive";
-  } else {
-    label = "neutral";
-  }
-
-  return { score, label };
 }
