@@ -281,6 +281,7 @@ export default function CommunityPage() {
           <div className="pb-20">
             <div className="p-3 sm:p-4">
               <SocialTab
+                key={activeTab}
                 tab={activeTab}
                 showCompose={showCompose}
                 onComposeClick={handleComposeClick}

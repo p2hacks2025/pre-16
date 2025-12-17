@@ -145,11 +145,11 @@ export function SocialTab({
       if (tab === "solo") {
         if (!user) {
           // Defer state updates to avoid calling setState synchronously inside an effect
-          queueMicrotask(() => {
+          const timer = setTimeout(() => {
             setPosts([]);
             setReady(true);
-          });
-          return;
+          }, 0);
+          return () => clearTimeout(timer);
         }
         q = query(
           collection(db, "posts"),
@@ -221,7 +221,9 @@ export function SocialTab({
                     );
                   }, 10000);
 
-                  return [...prev, newPost];
+                  return [...prev, newPost].sort(
+                    (a, b) => a.timestamp - b.timestamp
+                  );
                 });
               }
             }
@@ -312,7 +314,7 @@ export function SocialTab({
     // Add to pending array
     setPendingPosts((current) => {
       if (current.some((p) => p.id === newPost.id)) return current;
-      return [...current, newPost];
+      return [...current, newPost].sort((a, b) => a.timestamp - b.timestamp);
     });
 
     // Remove this specific post after 10s
