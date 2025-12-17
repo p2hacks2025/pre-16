@@ -12,6 +12,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
@@ -22,6 +23,35 @@ export default function CommunityPage() {
 
   // Pending posts state for animation in left column (Array)
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+
+  // Smooth animation for list sorting/removal - Custom config to prevent flicker
+  const [animationParent] = useAutoAnimate(
+    (el, action, oldCoords, newCoords) => {
+      // New items: let CSS (.animate-broadcast) handle the entry
+      if (action === "add") {
+        return new KeyframeEffect(el, [], { duration: 0 });
+      }
+      // Removed items: Kill visibility immediately to prevent CSS animation restart
+      // Return small duration to ensure 'remain' callback is triggered for siblings
+      if (action === "remove") {
+        el.style.opacity = "0";
+        return new KeyframeEffect(el, [{ opacity: 0 }], { duration: 10 });
+      }
+      // Remaining items: Slide them to their new position (e.g. up)
+      if (action === "remain") {
+        const deltaX = oldCoords.left - newCoords.left;
+        const deltaY = oldCoords.top - newCoords.top;
+        const start = { transform: `translate(${deltaX}px, ${deltaY}px)` };
+        const end = { transform: `translate(0, 0)` };
+        // Slower duration + smooth easing for 'null-to' feel
+        return new KeyframeEffect(el, [start, end], {
+          duration: 500,
+          easing: "cubic-bezier(0.25, 0.8, 0.25, 1)",
+        });
+      }
+      return new KeyframeEffect(el, [], { duration: 0 });
+    }
+  );
 
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
@@ -132,15 +162,18 @@ export default function CommunityPage() {
         {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
             Adjusted to top-left align with padding to match "below Ignite button"
         */}
-        <div className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-start justify-start pt-[280px] pl-8 relative gap-6">
+        <div
+          ref={animationParent}
+          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-start justify-start pt-[280px] pl-8 relative gap-6"
+        >
           {pendingPosts.length > 0 ? (
             <>
               {pendingPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="w-full max-w-md animate-broadcast"
-                >
-                  <PostCard post={post} onLoginRequired={() => {}} />
+                <div key={post.id} className="w-full max-w-md">
+                  {/* Inner wrapper handles the visual animation, isolated from layout shifts */}
+                  <div className="w-full animate-broadcast">
+                    <PostCard post={post} onLoginRequired={() => {}} />
+                  </div>
                 </div>
               ))}
             </>

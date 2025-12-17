@@ -206,29 +206,22 @@ export function SocialTab({
     }
   }, [tab, user]);
 
+  // Synchronize local pending posts with parent (CommunityPage)
+  useEffect(() => {
+    if (onPendingPostsChange) {
+      onPendingPostsChange(pendingPosts);
+    }
+  }, [pendingPosts, onPendingPostsChange]);
+
   const handleNewPost = (newPost: PostData) => {
     setShowFireworks(true);
 
     // Add to pending array
-    // We use a functional state update to ensure we have the latest list, though handleNewPost might be closed over old state if not careful.
-    // However, handleNewPost is recreated on render? No, it's defined inside component.
-    setPendingPosts((current) => {
-      const updated = [...current, newPost];
-      if (onPendingPostsChange) {
-        onPendingPostsChange(updated);
-      }
-      return updated;
-    });
+    setPendingPosts((current) => [...current, newPost]);
 
     // Remove this specific post after 10s
     setTimeout(() => {
-      setPendingPosts((current) => {
-        const next = current.filter((p) => p.id !== newPost.id);
-        if (onPendingPostsChange) {
-          onPendingPostsChange(next);
-        }
-        return next;
-      });
+      setPendingPosts((current) => current.filter((p) => p.id !== newPost.id));
     }, 10000);
   };
 
