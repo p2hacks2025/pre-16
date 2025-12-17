@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
@@ -30,8 +30,11 @@ export default function CommunityPage() {
   const router = useRouter();
 
   const handleCloseSettings = () => {
-    // Remove tab param by replacing
-    router.replace("/sns");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      window.history.replaceState(null, "", url.toString());
+    }
   };
 
   // Show loading state while checking auth

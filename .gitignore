@@ -386,4 +386,10 @@ crashlytics-build.properties
 # Firebase
 .firebase
 
+# Firebase CLI debug logs
+firebase-debug.log
+firebase-debug.*.log
+firebasehosting-debug.log
+ui-debug.log
+
 # End of https://www.toptal.com/developers/gitignore/api/python,unity,node

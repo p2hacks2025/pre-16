@@ -1,0 +1,14 @@
+{
+    "hosting": {
+        "site": "sigma-icon-476001-g8",
+        "source": ".",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ]
+    },
+    "frameworksBackend": {
+        "region": "asia-east1"
+    }
+}
