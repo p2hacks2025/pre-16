@@ -206,7 +206,6 @@ export default function CommunityPage() {
         </div>
       )}
 
-
       <div className="flex w-full">
         {/* Left Sidebar */}
         <Sidebar onPostClick={handleComposeClick} />
@@ -216,7 +215,7 @@ export default function CommunityPage() {
         */}
         <div
           ref={animationParent}
-          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-start justify-start pt-[280px] pl-8 relative gap-6"
+          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-center justify-start pt-[280px] relative gap-6"
         >
           {pendingPosts.length > 0 ? (
             <>

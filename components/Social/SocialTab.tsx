@@ -150,6 +150,69 @@ export function SocialTab({
           const now = Date.now();
           const fetched: PostData[] = [];
 
+          // Use docChanges to detect NEW posts for fireworks/pending logic
+          snap.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const data = change.doc.data() as any;
+              const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
+              const expiresAt =
+                (data.expiresAt?.toMillis?.() as number) ?? ts + EXPIRY_MS;
+
+              // Only trigger for recently added posts (e.g. within last 10 seconds)
+              // This prevents fireworks from firing on initial load of old posts
+              if (now - ts < 15000 && expiresAt > now) {
+                // If it's a private post (solo tab) and we are not the author, ignore
+                if (
+                  data.visibility === "private" &&
+                  user?.uid !== data.authorId
+                ) {
+                  return;
+                }
+
+                // Check if this post is already in pendingPosts (to avoid double trigger for author)
+                // The author adds to pendingPosts immediately in handleNewPost
+                setPendingPosts((prev) => {
+                  if (prev.some((p) => p.id === change.doc.id)) {
+                    return prev;
+                  }
+
+                  // New remote post! Trigger fireworks
+                  const label = data.sentiment?.label ?? null;
+                  // We can't easily conditionally call hooks or set state based on filtered logic inside a loop nicely without side effects
+                  // So we do it here.
+                  // Note: This might trigger multiple times if multiple posts come in at once,
+                  // but React batching usually handles it or we see multiple fireworks which is fine.
+                  setFireworksSentiment(label);
+                  setShowFireworks(true);
+
+                  const newPost: PostData = {
+                    id: change.doc.id,
+                    author: data.author ?? "Unknown",
+                    authorId: data.authorId ?? undefined,
+                    avatar: data.avatar ?? "from-orange-500 to-red-600",
+                    photoURL: data.photoURL ?? undefined,
+                    content: data.content ?? "",
+                    image: data.image ?? undefined,
+                    attachment: data.attachment ?? undefined,
+                    sentiment: data.sentiment ?? undefined,
+                    timestamp: ts,
+                    expiresAt,
+                    likes: data.likes ?? 0,
+                  };
+
+                  // Auto-remove after 10s
+                  setTimeout(() => {
+                    setPendingPosts((current) =>
+                      current.filter((p) => p.id !== newPost.id)
+                    );
+                  }, 10000);
+
+                  return [...prev, newPost];
+                });
+              }
+            }
+          });
+
           snap.docs.forEach((d) => {
             const data = d.data() as any;
             const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
@@ -231,7 +294,10 @@ export function SocialTab({
     setShowFireworks(true);
 
     // Add to pending array
-    setPendingPosts((current) => [...current, newPost]);
+    setPendingPosts((current) => {
+      if (current.some((p) => p.id === newPost.id)) return current;
+      return [...current, newPost];
+    });
 
     // Remove this specific post after 10s
     setTimeout(() => {
