@@ -398,4 +398,8 @@ firebasehosting-debug.log
 *.tsbuildinfo
 next-env.d.ts
 
+# Firebase Functions
+functions/lib/
+.firebase
+
 # End of https://www.toptal.com/developers/gitignore/api/python,unity,node
