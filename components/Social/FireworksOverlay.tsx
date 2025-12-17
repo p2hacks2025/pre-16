@@ -5,17 +5,26 @@ import { createPortal } from "react-dom";
 import { Fireworks } from "@shun_god/fireworks-js-setlocation-react";
 import type { FireworksHandlers } from "@shun_god/fireworks-js-setlocation-react";
 
+interface SoundOptions {
+  enabled?: boolean;
+  files?: string[];
+  volume?: { min?: number; max?: number };
+}
+
 interface FireworksOverlayProps {
   isActive: boolean;
   onComplete: () => void;
   /** Optional sentiment label to pick color scheme: "positive", "negative", etc. */
   sentimentLabel?: string | null;
+  /** Accept either SoundOptions or a direct path (string) or array of paths */
+  sound?: SoundOptions | string | string[];
 }
 
 export function FireworksOverlay({
   isActive,
   onComplete,
   sentimentLabel = null,
+  sound = undefined,
 }: FireworksOverlayProps) {
   const fwRef = useRef<FireworksHandlers | null>(null);
   const burstDistance =
@@ -50,6 +59,18 @@ export function FireworksOverlay({
     if (sentimentLabel === "positive") return positiveHue;
     if (sentimentLabel === "negative") return negativeHue;
     return neutralHue;
+  })();
+
+  // Simple sound mapping: accept a direct path string, array of paths, or SoundOptions.
+  const soundOptions: SoundOptions = (() => {
+    if (!sound) return { enabled: false };
+    if (typeof sound === "string") {
+      return { enabled: true, files: [sound], volume: { min: 50, max: 80 } };
+    }
+    if (Array.isArray(sound)) {
+      return { enabled: true, files: sound, volume: { min: 50, max: 80 } };
+    }
+    return sound as SoundOptions;
   })();
 
   useEffect(() => {
@@ -97,6 +118,8 @@ export function FireworksOverlay({
             min: rocketsPointValue,
             max: rocketsPointValue,
           },
+          // Sound options (use direct prop or boolean-off default)
+          sound: soundOptions,
           lineWidth: {
             explosion: {
               min: 1,
