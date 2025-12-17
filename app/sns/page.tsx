@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { X } from "lucide-react";
 
-import { useSearchParams, useRouter } from "next/navigation";
+// Removed useSearchParams/useRouter to avoid SSR prerender errors
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
@@ -63,13 +63,23 @@ export default function CommunityPage() {
 
   const [animationParent] = useAutoAnimate<HTMLElement>(customAnimationPlugin);
 
-  const searchParams = useSearchParams();
-  const isSettingsOpen = searchParams.get("tab") === "settings";
-  const router = useRouter();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Initialize isSettingsOpen from URL query on client side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setIsSettingsOpen(params.get("tab") === "settings");
+    }
+  }, []);
 
   const handleCloseSettings = () => {
-    // Remove tab param by replacing
-    router.replace("/sns");
+    setIsSettingsOpen(false);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      window.history.replaceState(null, "", url.toString());
+    }
   };
 
   // Show loading state while checking auth

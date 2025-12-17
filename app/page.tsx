@@ -16,7 +16,6 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 interface NavButtonProps {
   isActive?: boolean;
@@ -84,15 +83,10 @@ const baseClasses = `relative flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-2
 export default function Home() {
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useProfile(user);
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
 
   const [activeTab, setActiveTab] = useState<
     "intro" | "upload" | "camera" | "login" | "settings"
-  >(
-    (tabParam as "intro" | "upload" | "camera" | "login" | "settings") ||
-      "intro"
-  );
+  >("intro");
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-black text-white selection:bg-orange-500/30">
