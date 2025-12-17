@@ -27,13 +27,15 @@ export function DraggablePostCard({
     opacity: isDragging ? 0.3 : 1,
   };
 
+  // Apply drag listeners to owner's posts, but remove touch-none to allow scrolling
+  const dragProps = isOwner ? { ...attributes, ...listeners } : {};
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`touch-none ${className}`}
+      {...dragProps}
+      className={className}
     >
       <PostCard post={post} onLoginRequired={onLoginRequired} />
     </div>

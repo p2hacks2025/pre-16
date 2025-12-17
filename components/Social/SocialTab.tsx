@@ -116,8 +116,8 @@ export function SocialTab({
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
-        tolerance: 5,
+        delay: 250, // 0.8秒の長押しでドラッグ開始
+        tolerance: 20, // 20px以内の移動は許容（スクロール可能）
       },
     })
   );
