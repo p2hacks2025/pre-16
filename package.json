@@ -16,6 +16,7 @@
     "@shun_god/fireworks-js-setlocation-react": "^2.11.0",
     "face-api.js": "^0.22.2",
     "firebase": "^12.6.0",
+    "firebase-functions": "^7.0.2",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
     "react": "19.2.1",
