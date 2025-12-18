@@ -29,12 +29,14 @@ export function SocialTab({
   showCompose = false,
   onComposeClick,
   onPendingPostsChange,
+  onPostCreated,
   soundEnabled = false,
 }: {
   tab?: "everyone" | "solo";
   showCompose?: boolean;
   onComposeClick?: () => void;
   onPendingPostsChange?: (pendingPosts: PostData[]) => void;
+  onPostCreated?: () => void;
   soundEnabled?: boolean;
 }) {
   const { user } = useAuth();
@@ -110,6 +112,11 @@ export function SocialTab({
     const label = newPost.sentiment?.label ?? null;
     setFireworksSentiment(label);
     setShowFireworks(true);
+
+    // Notify parent to scroll or do other actions
+    if (onPostCreated) {
+      onPostCreated();
+    }
 
     // Add to pending array
     setPendingPosts((current) => {
