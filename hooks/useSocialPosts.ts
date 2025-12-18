@@ -40,6 +40,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
   const [ready, setReady] = useState(false);
   const cleanedRef = useRef<Set<string>>(new Set());
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+  const [lastSavedIds, setLastSavedIds] = useState<string[]>([]);
 
   // Events for UI effects (like fireworks)
   const [newPostEvent, setNewPostEvent] = useState<{

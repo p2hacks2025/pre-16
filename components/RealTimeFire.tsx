@@ -62,19 +62,23 @@ export function RealTimeFire() {
       }
     } catch (err: unknown) {
       console.error(err);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const e = err as any;
-      if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+
+      const hasName = (e: unknown): e is { name: string } =>
+        typeof e === "object" && e !== null && "name" in e && typeof (e as any).name === "string";
+
+      const getMessage = (e: unknown): string =>
+        typeof e === "object" && e !== null && "message" in e && typeof (e as any).message === "string"
+          ? (e as any).message
+          : "Unknown error";
+
+      if (hasName(err) && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
         setError(
           "カメラのアクセスが拒否されました。ブラウザの設定でカメラを許可して、再試行してください。"
         );
-      } else if (
-        err.name === "NotFoundError" ||
-        err.name === "DevicesNotFoundError"
-      ) {
+      } else if (hasName(err) && (err.name === "NotFoundError" || err.name === "DevicesNotFoundError")) {
         setError("カメラが見つかりません。");
       } else {
-        setError(`カメラエラー: ${e.message || "Unknown error"}`);
+        setError(`カメラエラー: ${getMessage(err)}`);
       }
       setStatus("error");
     }

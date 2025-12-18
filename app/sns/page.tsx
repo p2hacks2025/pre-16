@@ -10,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { Volume2, VolumeX, X } from "lucide-react";
 
-import { useSearchParams } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
@@ -28,15 +27,21 @@ export default function CommunityPage() {
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const searchParams = useSearchParams();
-  const isSettingsOpen = searchParams.get("tab") === "settings";
+  useEffect(() => {
+    // Client-only: read tab=settings from URL
+    const url = new URL(window.location.href);
+    const tab = url.searchParams.get("tab");
+    setIsSettingsOpen(tab === "settings");
+  }, []);
 
   const handleCloseSettings = () => {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.delete("tab");
       window.history.replaceState(null, "", url.toString());
+      setIsSettingsOpen(false);
     }
   };
 
