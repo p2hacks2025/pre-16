@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 
-import { Home, Mail, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
+import { Home, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -13,15 +13,15 @@ interface SidebarProps {
   onToggleSound?: () => void;
 }
 
-export function Sidebar({ onPostClick, soundEnabled = false, onToggleSound }: SidebarProps) {
-
+export function Sidebar({
+  onPostClick,
+  soundEnabled = false,
+  onToggleSound,
+}: SidebarProps) {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile(user);
 
-  const navItems = [
-    { icon: Home, label: "夜空", href: "/sns", active: true },
-    { icon: Mail, label: "チャット", href: "#" },
-  ];
+  const navItems = [{ icon: Home, label: "夜空", href: "/sns", active: true }];
 
   const isLoading = authLoading || profileLoading;
   const displayName =
@@ -30,7 +30,8 @@ export function Sidebar({ onPostClick, soundEnabled = false, onToggleSound }: Si
     user?.email?.split("@")[0] ||
     "未ログイン";
   const userId = profile?.uid || user?.uid || "guest";
-  const avatarGradient = profile?.avatarGradient || "from-orange-400 to-red-600";
+  const avatarGradient =
+    profile?.avatarGradient || "from-orange-400 to-red-600";
   const avatarUrl = profile?.photoURL || user?.photoURL;
 
   return (
@@ -98,7 +99,7 @@ export function Sidebar({ onPostClick, soundEnabled = false, onToggleSound }: Si
           onClick={onPostClick}
           className="mt-6 w-full relative group overflow-hidden rounded-full p-[1px]"
         >
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient" />
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient" />
           <div className="relative bg-black/20 backdrop-blur-sm hover:bg-white/10 text-white font-black text-xl py-3 rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(249,115,22,0.6)] group-hover:shadow-[0_0_30px_rgba(249,115,22,0.8)] border border-white/20">
             <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
               発火

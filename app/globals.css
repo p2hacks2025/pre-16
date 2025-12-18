@@ -28,6 +28,7 @@ body {
     rgb(var(--background-start-rgb));
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 /* Custom Animation for Delayed Post */
