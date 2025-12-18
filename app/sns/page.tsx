@@ -363,7 +363,7 @@ export default function CommunityPage() {
                 </button>
               </div>
               {user && showCompose && (
-                <div className="absolute bg-black w-[92%] pt-4 sm:pt-6">
+                <div className="absolute z-20 bg-black w-[92%] pt-4 sm:pt-6">
                   <CreatePost
                     onPost={() => {}}
                     userProfile={profile}
