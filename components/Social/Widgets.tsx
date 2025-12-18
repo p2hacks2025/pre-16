@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, MoreHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 
 export function Widgets() {
   return (

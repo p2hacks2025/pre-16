@@ -35,10 +35,9 @@ export interface PostData {
 
 interface PostCardProps {
   post: PostData;
-  onLoginRequired?: () => void;
 }
 
-export function PostCard({ post, onLoginRequired }: PostCardProps) {
+export function PostCard({ post }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();

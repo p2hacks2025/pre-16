@@ -10,17 +10,6 @@ interface ProfileSettingsProps {
   onSave: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
-const GRADIENT_OPTIONS = [
-  { name: "Fire", value: "from-orange-500 to-red-600" },
-  { name: "Ocean", value: "from-blue-500 to-cyan-600" },
-  { name: "Forest", value: "from-green-400 to-emerald-600" },
-  { name: "Sunset", value: "from-pink-500 to-purple-600" },
-  { name: "Gold", value: "from-yellow-400 to-orange-500" },
-  { name: "Night", value: "from-indigo-500 to-purple-700" },
-  { name: "Rose", value: "from-rose-400 to-pink-600" },
-  { name: "Electric", value: "from-cyan-400 to-blue-600" },
-];
-
 export function ProfileSettings({ profile, onSave }: ProfileSettingsProps) {
   const { logout } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.displayName || "");
