@@ -59,7 +59,7 @@ export async function analyzeSentimentAction(
   let score = 0;
 
   if (!text) {
-    return { score: 0, label: "positive" };
+    return { score: 0, label: "neutral" };
   }
 
   // OPTIMIZATION: Use Intl.Segmenter to tokenize text and look up words in O(1).
