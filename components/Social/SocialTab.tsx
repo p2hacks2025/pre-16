@@ -6,7 +6,7 @@ import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
 import { db } from "@/lib/firebase";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, collection, query, orderBy, limit, onSnapshot, where, Timestamp } from "firebase/firestore";
 import {
   DndContext,
   DragEndEvent,
@@ -106,6 +106,42 @@ export function SocialTab({
     window.addEventListener("hanabi-fireworks", listener);
     return () => window.removeEventListener("hanabi-fireworks", listener);
   }, []);
+
+  // Real-time listener for fireworks events from Firestore
+  useEffect(() => {
+    // Listen to fireworks events created in the last 10 seconds
+    const tenSecondsAgo = Timestamp.fromMillis(Date.now() - 10000);
+    const fireworksQuery = query(
+      collection(db, "fireworks"),
+      where("timestamp", ">=", tenSecondsAgo),
+      orderBy("timestamp", "desc"),
+      limit(50)
+    );
+
+    const unsubscribe = onSnapshot(fireworksQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          const sentiment = data.sentiment as string | null;
+          const count = (data.count as number) || 3;
+          
+          // Queue fireworks for this event
+          queueFireworks(sentiment, count);
+
+          // Delete the event after 5 seconds to keep collection clean
+          setTimeout(async () => {
+            try {
+              await deleteDoc(doc(db, "fireworks", change.doc.id));
+            } catch (err) {
+              console.warn("Failed to cleanup fireworks event:", err);
+            }
+          }, 5000);
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [queueFireworks]);
 
   // Dequeue one sentiment at a time and trigger fireworks
   useEffect(() => {

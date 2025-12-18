@@ -87,8 +87,35 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
     });
   };
 
+  const handleCardClick = async (e: React.MouseEvent) => {
+    // Ignore clicks on interactive elements
+    if (
+      (e.target as HTMLElement).closest("button") ||
+      (e.target as HTMLElement).closest("a") ||
+      (e.target as HTMLElement).closest("video") ||
+      (e.target as HTMLElement).tagName === "IMG"
+    ) {
+      return;
+    }
+
+    try {
+      // Add fireworks event to Firestore for real-time sync
+      const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
+      await addDoc(collection(db, "fireworks"), {
+        postId: post.id,
+        sentiment: post.sentiment?.label ?? null,
+        timestamp: serverTimestamp(),
+        count: Math.floor(Math.random() * 3) + 1, // 1-3 fireworks
+      });
+    } catch (error) {
+      console.error("Failed to trigger fireworks:", error);
+    }
+  };
+
   return (
-    <div className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group">
+    <div 
+      onClick={handleCardClick}
+      className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group cursor-pointer active:scale-[0.98]">
       <div className="p-3 sm:p-4 flex gap-2 sm:gap-4">
         {/* Avatar */}
         {post.photoURL ? (
