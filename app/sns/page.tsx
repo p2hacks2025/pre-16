@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
 import { SocialTab } from "@/components/Social/SocialTab";
+import { CreatePost } from "@/components/Social/CreatePost";
 import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { Volume2, VolumeX, X } from "lucide-react";
@@ -361,13 +362,19 @@ export default function CommunityPage() {
             className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll"
           >
             <div className="p-3 sm:p-4">
+              {user && showCompose && (
+                <div className="mb-4 sm:mb-6">
+                  <CreatePost
+                    onPost={() => {}}
+                    userProfile={profile}
+                    isPrivate={activeTab === "solo"}
+                  />
+                </div>
+              )}
               <SocialTab
                 key={activeTab}
                 tab={activeTab}
-                showCompose={showCompose}
-                onComposeClick={handleComposeClick}
                 onPendingPostsChange={setPendingPosts}
-                onPostCreated={handleScrollTop}
                 soundEnabled={soundEnabled}
               />
             </div>

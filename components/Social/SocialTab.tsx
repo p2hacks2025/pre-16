@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
 import { db } from "@/lib/firebase";
@@ -21,26 +20,18 @@ import { Search } from "lucide-react";
 import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
 import { useSocialPosts } from "@/hooks/useSocialPosts";
 
 export function SocialTab({
   tab = "everyone",
-  showCompose = false,
-  onComposeClick,
   onPendingPostsChange,
-  onPostCreated,
   soundEnabled = false,
 }: {
   tab?: "everyone" | "solo";
-  showCompose?: boolean;
-  onComposeClick?: () => void;
   onPendingPostsChange?: (pendingPosts: PostData[]) => void;
-  onPostCreated?: () => void;
   soundEnabled?: boolean;
 }) {
   const { user } = useAuth();
-  const { profile } = useProfile(user);
   // Refactored to use custom hook
   const {
     posts,
@@ -209,28 +200,6 @@ export function SocialTab({
     }
   }, [pendingPosts, onPendingPostsChange, hideNegative]);
 
-  const handleNewPost = (newPost: PostData) => {
-    // Choose sentiment preset for fireworks and activate
-    const label = newPost.sentiment?.label ?? null;
-    setFireworksSentiment(label);
-
-    // Notify parent to scroll or do other actions
-    if (onPostCreated) {
-      onPostCreated();
-    }
-
-    // Add to pending array
-    setPendingPosts((current) => {
-      if (current.some((p) => p.id === newPost.id)) return current;
-      return [...current, newPost].sort((a, b) => a.timestamp - b.timestamp);
-    });
-
-    // Remove this specific post after 10s
-    setTimeout(() => {
-      setPendingPosts((current) => current.filter((p) => p.id !== newPost.id));
-    }, 10000);
-  };
-
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
@@ -301,36 +270,6 @@ export function SocialTab({
             className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all hover:bg-white/10"
           />
         </div>
-
-        {/* Mobile Compose Button */}
-        <div className="mb-4 lg:hidden">
-          <button
-            type="button"
-            onClick={onComposeClick}
-            className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-black/20 px-6 py-3 text-xl font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all hover:bg-white/10 hover:shadow-[0_0_30px_rgba(249,115,22,0.8)]"
-          >
-            <span
-              className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient"
-              aria-hidden="true"
-            />
-            <span className="relative flex items-center justify-center gap-2">
-              <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
-                発火
-              </span>
-              <span className="text-xs font-normal text-white/70 tracking-widest">
-                IGNITE
-              </span>
-            </span>
-          </button>
-        </div>
-
-        {user && showCompose && (
-          <CreatePost
-            onPost={handleNewPost}
-            userProfile={profile}
-            isPrivate={tab === "solo"}
-          />
-        )}
 
         {/* List Container with overflow-anchor: none to prevent browser scroll jumping */}
         <motion.div
