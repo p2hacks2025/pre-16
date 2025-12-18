@@ -50,19 +50,27 @@ export function SocialTab({
     deletePostAssets,
   } = useSocialPosts({ tab, user });
 
-  const [showFireworks, setShowFireworks] = useState(false);
+  const [fireworksQueue, setFireworksQueue] = useState<(string | null)[]>([]);
   const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
     null
   );
+  const [fireworksTrigger, setFireworksTrigger] = useState(0);
 
-  // Listen for new post events for fireworks
+  // Enqueue sentiments from new post events
   useEffect(() => {
-    if (newPostEvent) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFireworksSentiment(newPostEvent.sentiment);
-      setShowFireworks(true);
+    if (newPostEvent?.sentiments?.length) {
+      setFireworksQueue((prev) => [...prev, ...newPostEvent.sentiments]);
     }
   }, [newPostEvent]);
+
+  // Dequeue one sentiment at a time and trigger fireworks
+  useEffect(() => {
+    if (!fireworksQueue.length) return;
+    const [next, ...rest] = fireworksQueue;
+    setFireworksSentiment(next ?? null);
+    setFireworksQueue(rest);
+    setFireworksTrigger((prev) => prev + 1);
+  }, [fireworksQueue]);
 
   // Clean cleanedRef ... actually this logic is inside the hook now but we used it for one-off deletes.
   // The hook handles the expiration deletes.
@@ -106,11 +114,6 @@ export function SocialTab({
   }, [pendingPosts, onPendingPostsChange]);
 
   const handleNewPost = (newPost: PostData) => {
-    // Choose sentiment preset for fireworks and activate
-    const label = newPost.sentiment?.label ?? null;
-    setFireworksSentiment(label);
-    setShowFireworks(true);
-
     // Add to pending array
     setPendingPosts((current) => {
       if (current.some((p) => p.id === newPost.id)) return current;
@@ -278,7 +281,7 @@ export function SocialTab({
           ) : null}
         </DragOverlay>
         <FireworksOverlay
-          isActive={showFireworks}
+          trigger={fireworksTrigger}
           sentimentLabel={fireworksSentiment}
           sound={
             soundEnabled
@@ -289,10 +292,6 @@ export function SocialTab({
                 }
               : { enabled: false }
           }
-          onComplete={() => {
-            setShowFireworks(false);
-            setFireworksSentiment(null);
-          }}
         />
       </div>
     </DndContext>

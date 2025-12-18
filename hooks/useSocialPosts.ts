@@ -14,6 +14,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { PostData } from "@/components/Social/PostCard";
 
 const STORAGE_KEY = "hanabi_social_posts";
+const STORAGE_LAST_IDS = "hanabi_social_last_ids";
 const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 // Initial seed posts
@@ -39,10 +40,11 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
   const [ready, setReady] = useState(false);
   const cleanedRef = useRef<Set<string>>(new Set());
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+  const [lastSavedIds, setLastSavedIds] = useState<string[]>([]);
 
   // Events for UI effects (like fireworks)
   const [newPostEvent, setNewPostEvent] = useState<{
-    sentiment: string | null;
+    sentiments: (string | null)[];
     timestamp: number;
   } | null>(null);
 
@@ -121,12 +123,6 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
 
                 setPendingPosts((prev) => {
                   if (prev.some((p) => p.id === change.doc.id)) return prev;
-
-                  // Trigger event
-                  setNewPostEvent({
-                    sentiment: data.sentiment?.label ?? null,
-                    timestamp: Date.now(),
-                  });
 
                   const newPost: PostData = {
                     id: change.doc.id,
@@ -210,6 +206,39 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
           });
 
           setPosts(fetched.length ? fetched : SEED_POSTS);
+
+          // Detect new posts compared to last saved 50 IDs in localStorage
+          try {
+            const saved = localStorage.getItem(STORAGE_LAST_IDS);
+            const prevIds: string[] = saved ? JSON.parse(saved) : lastSavedIds;
+            const prevSet = new Set(prevIds);
+            const currentIds = fetched.map((p) => p.id);
+            const newIds =
+              prevIds.length === 0
+                ? [] // 初回は花火を鳴らさない
+                : currentIds.filter((id) => !prevSet.has(id));
+
+            if (newIds.length) {
+              const sentiments = newIds
+                .map(
+                  (id) => fetched.find((p) => p.id === id)?.sentiment?.label ?? null
+                )
+                .filter((v) => v !== undefined);
+              setNewPostEvent({
+                sentiments,
+                timestamp: Date.now(),
+              });
+            }
+
+            localStorage.setItem(
+              STORAGE_LAST_IDS,
+              JSON.stringify(currentIds.slice(0, 50))
+            );
+            setLastSavedIds(currentIds.slice(0, 50));
+          } catch (err) {
+            console.warn("Failed to process localStorage diff", err);
+          }
+
           localStorage.setItem(STORAGE_KEY, JSON.stringify(fetched));
           setReady(true);
         },
