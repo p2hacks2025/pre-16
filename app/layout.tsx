@@ -34,7 +34,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="relative w-full max-w-[100vw] overflow-x-hidden min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );

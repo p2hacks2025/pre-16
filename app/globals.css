@@ -18,6 +18,7 @@
   }
 }
 
+html,
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -29,6 +30,8 @@ body {
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  max-width: 100vw;
+  overscroll-behavior-x: none;
 }
 
 /* Custom Animation for Delayed Post */

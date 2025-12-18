@@ -91,7 +91,7 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex justify-center relative">
+    <div className="min-h-screen bg-black text-white flex justify-center relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Settings Modal (Popup) */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">

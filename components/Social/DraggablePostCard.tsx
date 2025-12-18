@@ -27,6 +27,7 @@ export function DraggablePostCard({
   const style = {
     opacity: isDragging ? 0.3 : 1,
     transform: CSS.Translate.toString(transform),
+    touchAction: "pan-y",
   };
 
   // Apply drag listeners to owner's posts, but remove touch-none to allow scrolling
