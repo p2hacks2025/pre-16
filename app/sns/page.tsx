@@ -29,15 +29,6 @@ export default function CommunityPage() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleScrollTop = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-  };
-
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
 
@@ -95,13 +86,7 @@ export default function CommunityPage() {
 
   const handleComposeClick = () => {
     if (user) {
-      // Scroll to top
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
-      }
       setShowCompose((prev) => !prev);
-      // Also scroll to top so user can see the compose form
-      handleScrollTop();
     } else {
       setShowLoginPrompt(true);
     }
@@ -355,15 +340,30 @@ export default function CommunityPage() {
                 )}
               </div>
             </div>
-          </div>
-
-          <div
-            ref={scrollContainerRef}
-            className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll"
-          >
-            <div className="p-3 sm:p-4">
+            <div className="px-4 sm:px-4">
+              {/* Mobile Compose Button */}
+              <div className="m-3 lg:hidden">
+                <button
+                  type="button"
+                  onClick={handleComposeClick}
+                  className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full border border-white/20 bg-black/20 px-6 py-3 text-xl font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.6)] transition-all hover:bg-white/10 hover:shadow-[0_0_30px_rgba(249,115,22,0.8)]"
+                >
+                  <span
+                    className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 animate-gradient"
+                    aria-hidden="true"
+                  />
+                  <span className="relative flex items-center justify-center gap-2">
+                    <span className="bg-gradient-to-r from-orange-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]">
+                      発火
+                    </span>
+                    <span className="text-xs font-normal text-white/70 tracking-widest">
+                      IGNITE
+                    </span>
+                  </span>
+                </button>
+              </div>
               {user && showCompose && (
-                <div className="mb-4 sm:mb-6">
+                <div className="absolute bg-black w-[92%] pt-4 sm:pt-6">
                   <CreatePost
                     onPost={() => {}}
                     userProfile={profile}
@@ -371,6 +371,14 @@ export default function CommunityPage() {
                   />
                 </div>
               )}
+            </div>
+          </div>
+
+          <div
+            ref={scrollContainerRef}
+            className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll"
+          >
+            <div className="p-3 sm:p-4">
               <SocialTab
                 key={activeTab}
                 tab={activeTab}
