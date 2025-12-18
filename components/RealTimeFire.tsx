@@ -16,7 +16,7 @@ export function RealTimeFire() {
 
   const { emitParticles, updateAndDrawParticles } = useFireParticles();
   const requestRef = useRef<number | null>(null);
-  const faceApiRef = useRef<any>(null); // Store face-api instance
+  const faceApiRef = useRef<unknown>(null); // Store face-api instance
   const frameCountRef = useRef(0); // For throttling detection
 
   // 1. Setup Camera and Models
@@ -60,12 +60,11 @@ export function RealTimeFire() {
           }
         };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (
-        err.name === "NotAllowedError" ||
-        err.name === "PermissionDeniedError"
-      ) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = err as any;
+      if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
         setError(
           "カメラのアクセスが拒否されました。ブラウザの設定でカメラを許可して、再試行してください。"
         );
@@ -75,7 +74,7 @@ export function RealTimeFire() {
       ) {
         setError("カメラが見つかりません。");
       } else {
-        setError(`カメラエラー: ${err.message || "Unknown error"}`);
+        setError(`カメラエラー: ${e.message || "Unknown error"}`);
       }
       setStatus("error");
     }
@@ -84,8 +83,9 @@ export function RealTimeFire() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      const videoEl = videoRef.current;
+      if (videoEl && videoEl.srcObject) {
+        const stream = videoEl.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
       }
     };
@@ -101,7 +101,8 @@ export function RealTimeFire() {
     )
       return;
 
-    const faceapi = faceApiRef.current;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const faceapi = faceApiRef.current as any;
 
     // TinyDetector options - lower threshold for easier detection, smaller size for speed
     const detectorOptions = new faceapi.TinyFaceDetectorOptions({

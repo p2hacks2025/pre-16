@@ -91,7 +91,7 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex justify-center relative overflow-x-hidden w-full max-w-[100vw]">
+    <div className="h-screen bg-black text-white flex justify-center relative w-full max-w-[100vw] overflow-hidden">
       {/* Settings Modal (Popup) */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -207,7 +207,7 @@ export default function CommunityPage() {
         </div>
       )}
 
-      <div className="flex w-full">
+      <div className="flex w-full h-full">
         {/* Left Sidebar */}
         <Sidebar
           onPostClick={handleComposeClick}
@@ -261,8 +261,8 @@ export default function CommunityPage() {
         </div>
 
         {/* Main Feed (Right Side) */}
-        <main className="w-full lg:w-[600px] lg:flex-none min-h-screen relative">
-          <div className="lg:hidden sticky top-0 z-20 bg-black/80 backdrop-blur-sm">
+        <main className="w-full lg:w-[600px] lg:flex-none h-full relative flex flex-col">
+          <div className="lg:hidden shrink-0 z-20 bg-black/80 backdrop-blur-sm">
             <div className="flex items-center justify-start gap-12 px-3 py-2">
               <Link
                 href="/"
@@ -274,7 +274,7 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          <div className="sticky top-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
+          <div className="shrink-0 bg-black/80 backdrop-blur-md z-10 border-b border-white/20">
             <div className="flex w-full">
               <div
                 onClick={() => setActiveTab("everyone")}
@@ -324,7 +324,7 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          <div className="pb-20">
+          <div className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll">
             <div className="p-3 sm:p-4">
               <SocialTab
                 key={activeTab}

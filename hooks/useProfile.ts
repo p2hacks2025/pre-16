@@ -18,7 +18,9 @@ export function useProfile(user: User | null) {
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfile(null);
+
       setLoading(false);
       return;
     }
@@ -32,7 +34,8 @@ export function useProfile(user: User | null) {
           // 初回ログイン時にデフォルトプロフィールを作成
           const defaultProfile: UserProfile = {
             uid: user.uid,
-            displayName: user.displayName || user.email?.split("@")[0] || "Dragon Master",
+            displayName:
+              user.displayName || user.email?.split("@")[0] || "Dragon Master",
             avatarGradient: "from-orange-500 to-red-600",
             photoURL: user.photoURL || undefined,
             createdAt: Date.now(),
