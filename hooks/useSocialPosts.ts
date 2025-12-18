@@ -14,6 +14,7 @@ import { deleteObject, ref } from "firebase/storage";
 import { PostData } from "@/components/Social/PostCard";
 
 const STORAGE_KEY = "hanabi_social_posts";
+const STORAGE_LAST_IDS = "hanabi_social_last_ids";
 const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 // Initial seed posts
@@ -42,7 +43,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
 
   // Events for UI effects (like fireworks)
   const [newPostEvent, setNewPostEvent] = useState<{
-    sentiment: string | null;
+    sentiments: (string | null)[];
     timestamp: number;
   } | null>(null);
 
@@ -94,6 +95,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
         (snap) => {
           const now = Date.now();
           const fetched: PostData[] = [];
+          const addedIds: string[] = [];
 
           snap.docChanges().forEach((change) => {
             if (change.type === "added") {
@@ -122,11 +124,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
                 setPendingPosts((prev) => {
                   if (prev.some((p) => p.id === change.doc.id)) return prev;
 
-                  // Trigger event
-                  setNewPostEvent({
-                    sentiment: data.sentiment?.label ?? null,
-                    timestamp: Date.now(),
-                  });
+                  addedIds.push(change.doc.id);
 
                   const newPost: PostData = {
                     id: change.doc.id,
@@ -210,6 +208,32 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
           });
 
           setPosts(fetched.length ? fetched : SEED_POSTS);
+
+          // Detect new posts (from docChanges added) to trigger fireworks
+          try {
+            if (addedIds.length) {
+              const sentiments = addedIds
+                .map(
+                  (id) =>
+                    fetched.find((p) => p.id === id)?.sentiment?.label ?? null
+                )
+                .filter((v) => v != null);
+              setNewPostEvent({
+                sentiments,
+                timestamp: Date.now(),
+              });
+            }
+
+            const currentIds = fetched.map((p) => p.id);
+            localStorage.setItem(
+              STORAGE_LAST_IDS,
+              JSON.stringify(currentIds.slice(0, 50))
+            );
+            setLastSavedIds(currentIds.slice(0, 50));
+          } catch (err) {
+            console.warn("Failed to process localStorage diff", err);
+          }
+
           localStorage.setItem(STORAGE_KEY, JSON.stringify(fetched));
           setReady(true);
         },

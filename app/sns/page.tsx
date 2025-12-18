@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Login } from "@/components/Login";
 import { Volume2, VolumeX, X } from "lucide-react";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
@@ -28,7 +28,6 @@ export default function CommunityPage() {
 
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
-  const router = useRouter();
 
   const handleCloseSettings = () => {
     if (typeof window !== "undefined") {
@@ -218,7 +217,10 @@ export default function CommunityPage() {
         {/* Center Spacer / Pending Post Stage (Between Sidebar and Main Feed) 
             Adjusted to top-left align with padding to match "below Ignite button"
         */}
-        <div className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-center justify-start pt-[280px] relative gap-6">
+        <div
+          className="hidden lg:flex flex-1 border-r border-white/10 flex-col items-center justify-start pt-[280px] relative gap-6"
+          data-pending-stack
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             {pendingPosts.length > 0 ? (
               pendingPosts.map((post) => (
@@ -237,6 +239,19 @@ export default function CommunityPage() {
                     opacity: { duration: 0.3 },
                   }}
                   className="w-full max-w-md"
+                  onClick={() => {
+                    if (typeof window === "undefined") return;
+                    const count = 3 + Math.floor(Math.random() * 3); // 3-5発
+                    const sentiments = Array.from(
+                      { length: count },
+                      () => post.sentiment?.label ?? null
+                    );
+                    window.dispatchEvent(
+                      new CustomEvent("hanabi-fireworks", {
+                        detail: { sentiments },
+                      })
+                    );
+                  }}
                 >
                   {/* Inner wrapper handles the visual animation (10s broadcast sequence) */}
                   <div className="w-full animate-broadcast">
