@@ -64,6 +64,7 @@ export function TrashBin({ dropTrigger, soundEnabled = true }: TrashBinProps) {
   useEffect(() => {
     if (dropTrigger && dropTrigger > 0) {
       playSound();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSmoke(true);
       const timer = setTimeout(() => setSmoke(false), 2000); // 2s smoke duration
       return () => clearTimeout(timer);

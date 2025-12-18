@@ -1,22 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
-import { db, storage } from "@/lib/firebase";
-import {
-  collection,
-  deleteDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  doc,
-  where,
-  limit,
-} from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
+import { db } from "@/lib/firebase";
+import { deleteDoc, doc } from "firebase/firestore";
 import {
   DndContext,
   DragEndEvent,
@@ -32,31 +22,7 @@ import { TrashBin } from "./TrashBin";
 import { DraggablePostCard } from "./DraggablePostCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-
-const STORAGE_KEY = "hanabi_social_posts";
-const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
-
-// Initial seed posts to make it look alive
-const SEED_POSTS: PostData[] = [
-  {
-    id: "seed-1",
-    author: "Hanabi Official",
-    avatar: "from-blue-500 to-purple-600",
-    content:
-      "Welcome to the Hanabi Community! 🎆\nShare your best fire-breathing moments here.",
-    timestamp: Date.now() - 3600000, // 1 hour ago
-    likes: 42,
-  },
-  {
-    id: "seed-2",
-    author: "Fire Starter",
-    avatar: "from-green-400 to-emerald-600",
-    content:
-      "This new AR feature is insane! My cat looks like a dragon now. 🐉",
-    timestamp: Date.now() - 7200000, // 2 hours ago
-    likes: 15,
-  },
-];
+import { useSocialPosts } from "@/hooks/useSocialPosts";
 
 export function SocialTab({
   tab = "everyone",
@@ -73,20 +39,39 @@ export function SocialTab({
 }) {
   const { user } = useAuth();
   const { profile } = useProfile(user);
-  const [posts, setPosts] = useState<PostData[]>(SEED_POSTS);
-  const [ready, setReady] = useState(false);
-  const cleanedRef = useRef<Set<string>>(new Set());
+  // Refactored to use custom hook
+  const {
+    posts,
+    setPosts,
+    pendingPosts,
+    setPendingPosts,
+    ready,
+    newPostEvent,
+    deletePostAssets,
+  } = useSocialPosts({ tab, user });
+
+  const [showFireworks, setShowFireworks] = useState(false);
+  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
+    null
+  );
+
+  // Listen for new post events for fireworks
+  useEffect(() => {
+    if (newPostEvent) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFireworksSentiment(newPostEvent.sentiment);
+      setShowFireworks(true);
+    }
+  }, [newPostEvent]);
+
+  // Clean cleanedRef ... actually this logic is inside the hook now but we used it for one-off deletes.
+  // The hook handles the expiration deletes.
+
+  // Logic for manual delete drag-drop
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [hideNegative, setHideNegative] = useState(false);
-
-  // New state for the 10-second pending post animation (Array)
-  const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
-
-  // Custom animation plugin for smooth slide when posts transition
-  // Skip "add" animation - let CSS handle new post entry to avoid conflicts
-  // Only handle "remain" for smooth sliding of existing posts (ヌルッと上にスライド)
 
   useEffect(() => {
     const checkSetting = () => {
@@ -98,29 +83,6 @@ export function SocialTab({
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
-
-  const deleteAttachmentFromStorage = React.useCallback(
-    async (url?: string) => {
-      if (!url) return;
-      try {
-        const fileRef = ref(storage, url);
-        await deleteObject(fileRef);
-      } catch (err) {
-        console.warn("Failed to delete attachment from storage", err);
-      }
-    },
-    []
-  );
-
-  type PostAssets = Pick<PostData, "attachment" | "image">;
-  const deletePostAssets = React.useCallback(
-    async (post?: PostAssets) => {
-      if (!post) return;
-      const url = post.attachment?.url ?? post.image;
-      await deleteAttachmentFromStorage(url);
-    },
-    [deleteAttachmentFromStorage]
-  );
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -135,176 +97,6 @@ export function SocialTab({
       },
     })
   );
-  const [showFireworks, setShowFireworks] = useState(false);
-  const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
-    null
-  );
-
-  // Subscribe to Firestore in realtime
-  useEffect(() => {
-    try {
-      let q = query(
-        collection(db, "posts"),
-        orderBy("timestamp", "desc"),
-        limit(50)
-      );
-
-      if (tab === "solo") {
-        if (!user) {
-          // Defer state updates to avoid calling setState synchronously inside an effect
-          const timer = setTimeout(() => {
-            setPosts([]);
-            setReady(true);
-          }, 0);
-          return () => clearTimeout(timer);
-        }
-        q = query(
-          collection(db, "posts"),
-          where("authorId", "==", user.uid),
-          orderBy("timestamp", "desc"),
-          limit(50)
-        );
-      }
-
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          const now = Date.now();
-          const fetched: PostData[] = [];
-
-          // Use docChanges to detect NEW posts for fireworks/pending logic
-          snap.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const data = change.doc.data() as any;
-              const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
-              const expiresAt =
-                (data.expiresAt?.toMillis?.() as number) ?? ts + EXPIRY_MS;
-
-              // Only trigger for recently added posts (e.g. within last 10 seconds)
-              // This prevents fireworks from firing on initial load of old posts
-              if (now - ts < 15000 && expiresAt > now) {
-                // If it's a private post (solo tab) and we are not the author, ignore
-                if (
-                  data.visibility === "private" &&
-                  user?.uid !== data.authorId
-                ) {
-                  return;
-                }
-
-                // Check if this post is already in pendingPosts (to avoid double trigger for author)
-                // The author adds to pendingPosts immediately in handleNewPost
-                setPendingPosts((prev) => {
-                  if (prev.some((p) => p.id === change.doc.id)) {
-                    return prev;
-                  }
-
-                  // New remote post! Trigger fireworks
-                  const label = data.sentiment?.label ?? null;
-                  // We can't easily conditionally call hooks or set state based on filtered logic inside a loop nicely without side effects
-                  // So we do it here.
-                  // Note: This might trigger multiple times if multiple posts come in at once,
-                  // but React batching usually handles it or we see multiple fireworks which is fine.
-                  setFireworksSentiment(label);
-                  setShowFireworks(true);
-
-                  const newPost: PostData = {
-                    id: change.doc.id,
-                    author: data.author ?? "Unknown",
-                    authorId: data.authorId ?? undefined,
-                    avatar: data.avatar ?? "from-orange-500 to-red-600",
-                    photoURL: data.photoURL ?? undefined,
-                    content: data.content ?? "",
-                    image: data.image ?? undefined,
-                    attachment: data.attachment ?? undefined,
-                    sentiment: data.sentiment ?? undefined,
-                    timestamp: ts,
-                    expiresAt,
-                    likes: data.likes ?? 0,
-                  };
-
-                  // Auto-remove after 10s
-                  setTimeout(() => {
-                    setPendingPosts((current) =>
-                      current.filter((p) => p.id !== newPost.id)
-                    );
-                  }, 10000);
-
-                  return [...prev, newPost].sort(
-                    (a, b) => a.timestamp - b.timestamp
-                  );
-                });
-              }
-            }
-          });
-
-          snap.docs.forEach((d) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const data: any = d.data();
-            const ts = (data.timestamp?.toMillis?.() as number) ?? Date.now();
-            const expiresAt =
-              (data.expiresAt?.toMillis?.() as number) ?? ts + EXPIRY_MS;
-            const expired = expiresAt <= now;
-
-            if (expired) {
-              if (!cleanedRef.current.has(d.id)) {
-                cleanedRef.current.add(d.id);
-                deletePostAssets({
-                  attachment: data.attachment,
-                  image: data.image,
-                }).catch((err) =>
-                  console.warn("Failed to delete expired post attachment", err)
-                );
-                deleteDoc(d.ref).catch((err) =>
-                  console.error("Failed to auto-delete expired post", err)
-                );
-              }
-              return;
-            }
-
-            // FILTER: If we are not in 'solo' tab, hide posts marked as private
-            if (tab !== "solo" && data.visibility === "private") {
-              return;
-            }
-
-            fetched.push({
-              id: d.id,
-              author: data.author ?? "Unknown",
-              authorId: data.authorId ?? undefined,
-              avatar: data.avatar ?? "from-orange-500 to-red-600",
-              photoURL: data.photoURL ?? undefined,
-              content: data.content ?? "",
-              image: data.image ?? undefined,
-              attachment: data.attachment ?? undefined,
-              sentiment: data.sentiment ?? undefined,
-              timestamp: ts,
-              expiresAt,
-              likes: data.likes ?? 0,
-            });
-          });
-
-          setPosts(fetched.length ? fetched : SEED_POSTS);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(fetched));
-          setReady(true);
-        },
-        (err) => {
-          console.error("Firestore subscription error", err);
-          // Fallback to localStorage
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
-            try {
-              setPosts(JSON.parse(saved));
-            } catch {}
-          }
-          setReady(true);
-        }
-      );
-      return () => unsub();
-    } catch (e) {
-      console.error(e);
-      // Defer setReady to avoid sync setState inside effect
-      queueMicrotask(() => setReady(true));
-    }
-  }, [tab, user, deletePostAssets]);
 
   // Synchronize local pending posts with parent (CommunityPage)
   useEffect(() => {

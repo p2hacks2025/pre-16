@@ -115,7 +115,7 @@ export function Sidebar({
 
       {user ? (
         <Link
-          href="/?tab=settings"
+          href="/sns?tab=settings"
           className="mb-4 flex items-center gap-3 p-3 rounded-full hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10"
         >
           {profile?.photoURL ? (
