@@ -80,16 +80,8 @@ export function FireworksOverlay({
     return {
       ...sound,
       volume: {
-        min: clamp(
-          typeof volume.min === "number" ? volume.min : 50,
-          0,
-          100
-        ),
-        max: clamp(
-          typeof volume.max === "number" ? volume.max : 80,
-          0,
-          100
-        ),
+        min: clamp(typeof volume.min === "number" ? volume.min : 50, 0, 100),
+        max: clamp(typeof volume.max === "number" ? volume.max : 80, 0, 100),
       },
     };
   }, [sound]);
@@ -98,6 +90,34 @@ export function FireworksOverlay({
     const { width, height } = getViewport();
     return {
       hue: hueRange,
+      opacity: 0.35,
+      acceleration: 1.02,
+      friction: 0.985,
+      gravity: 1.0,
+      particles: 65,
+      traceLength: 4,
+      traceSpeed: 14,
+      explosion: 6,
+      intensity: 22,
+      flickering: 35,
+      lineWidth: {
+        explosion: {
+          min: 1,
+          max: 3,
+        },
+        trace: {
+          min: 1,
+          max: 2,
+        },
+      },
+      brightness: {
+        min: 65,
+        max: 85,
+      },
+      decay: {
+        min: 0.02,
+        max: 0.028,
+      },
       rocketsPoint: { min: 50, max: 50 },
       launchAngle: { min: 80, max: 100 },
       burstDistance: Math.round(height * 0.75),
@@ -147,7 +167,7 @@ export function FireworksOverlay({
         hue: hueRange,
         rocketsPoint: { min: rocketsPoint, max: rocketsPoint },
         burstDistance: Math.round(height * 0.75),
-        launchAngle: { min: 70, max: 110 },
+        launchAngle: { min: 80, max: 100 },
       });
 
       fw.launch(1);
@@ -175,7 +195,6 @@ export function FireworksOverlay({
           height: "100%",
           position: "fixed",
           background: "transparent",
-          zIndex: 9999,
         }}
       />
     </div>,
