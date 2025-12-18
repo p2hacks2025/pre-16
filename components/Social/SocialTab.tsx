@@ -58,14 +58,33 @@ export function SocialTab({
   const [fireworksProcessing, setFireworksProcessing] = useState(false);
   const fireworksTimerRef = useRef<number | null>(null);
   const fireworksQueueTimerRef = useRef<number | null>(null);
+
+  const [hideNegative, setHideNegative] = useState(false);
+
+  useEffect(() => {
+    const checkSetting = () => {
+      setHideNegative(localStorage.getItem("hanabi_hide_negative") === "true");
+    };
+    checkSetting();
+
+    const handleStorageChange = () => checkSetting();
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   type FireworksEventDetail = { sentiments?: (string | null)[] };
   type FireworksCustomEvent = CustomEvent<FireworksEventDetail>;
 
   // Enqueue sentiments from new post events
   useEffect(() => {
     if (newPostEvent?.sentiments?.length) {
-      setFireworksQueue((prev) => [...prev, ...newPostEvent.sentiments]);
+      // Filter out negative fireworks if hidden
+      const filtered = hideNegative
+        ? newPostEvent.sentiments.filter((s) => s !== "negative")
+        : newPostEvent.sentiments;
+      setFireworksQueue((prev) => [...prev, ...filtered]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newPostEvent]);
 
   const queueFireworks = useCallback((label: string | null, count = 1) => {
@@ -81,8 +100,7 @@ export function SocialTab({
       if (!sentiments?.length) return;
       setFireworksQueue((prev) => [...prev, ...sentiments]);
     };
-    const listener: EventListener = (e) =>
-      handler(e as FireworksCustomEvent);
+    const listener: EventListener = (e) => handler(e as FireworksCustomEvent);
     window.addEventListener("hanabi-fireworks", listener);
     return () => window.removeEventListener("hanabi-fireworks", listener);
   }, []);
@@ -126,18 +144,8 @@ export function SocialTab({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dropTrigger, setDropTrigger] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [hideNegative, setHideNegative] = useState(false);
 
-  useEffect(() => {
-    const checkSetting = () => {
-      setHideNegative(localStorage.getItem("hanabi_hide_negative") === "true");
-    };
-    checkSetting();
-
-    const handleStorageChange = () => checkSetting();
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  // hideNegative moved to top
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -156,9 +164,12 @@ export function SocialTab({
   // Synchronize local pending posts with parent (CommunityPage)
   useEffect(() => {
     if (onPendingPostsChange) {
-      onPendingPostsChange(pendingPosts);
+      const filtered = hideNegative
+        ? pendingPosts.filter((p) => p.sentiment?.label !== "negative")
+        : pendingPosts;
+      onPendingPostsChange(filtered);
     }
-  }, [pendingPosts, onPendingPostsChange]);
+  }, [pendingPosts, onPendingPostsChange, hideNegative]);
 
   const handleNewPost = (newPost: PostData) => {
     // Add to pending array
@@ -208,22 +219,25 @@ export function SocialTab({
     >
       <div className="w-full relative animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Mobile "Center" Shim - if on mobile, show pending posts here at top */}
-        <div
-          className="lg:hidden mb-6 flex flex-col gap-4"
-          data-pending-stack
-        >
-          {pendingPosts.map((p) => (
-            <div
-              key={p.id}
-              className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6 cursor-pointer"
-              onClick={() => {
-                const count = 3 + Math.floor(Math.random() * 3); // 3-5発
-                queueFireworks(p.sentiment?.label ?? null, count);
-              }}
-            >
-              <PostCard post={p} onLoginRequired={() => {}} />
-            </div>
-          ))}
+        <div className="lg:hidden mb-6 flex flex-col gap-4" data-pending-stack>
+          {pendingPosts
+            .filter((p) => {
+              if (hideNegative && p.sentiment?.label === "negative")
+                return false;
+              return true;
+            })
+            .map((p) => (
+              <div
+                key={p.id}
+                className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6 cursor-pointer"
+                onClick={() => {
+                  const count = 3 + Math.floor(Math.random() * 3); // 3-5発
+                  queueFireworks(p.sentiment?.label ?? null, count);
+                }}
+              >
+                <PostCard post={p} onLoginRequired={() => {}} />
+              </div>
+            ))}
         </div>
 
         {/* Search Bar */}

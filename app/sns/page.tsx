@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
@@ -36,6 +36,8 @@ export default function CommunityPage() {
       window.history.replaceState(null, "", url.toString());
     }
   };
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("hanabi_sound_enabled");
@@ -83,6 +85,10 @@ export default function CommunityPage() {
 
   const handleComposeClick = () => {
     if (user) {
+      // Scroll to top
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
       setShowCompose((prev) => !prev);
     } else {
       setShowLoginPrompt(true);
@@ -339,7 +345,10 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          <div className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll">
+          <div
+            ref={scrollContainerRef}
+            className="pb-20 flex-1 overflow-y-auto min-h-0 container-scroll"
+          >
             <div className="p-3 sm:p-4">
               <SocialTab
                 key={activeTab}
