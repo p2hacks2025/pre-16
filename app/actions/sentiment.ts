@@ -58,30 +58,21 @@ export async function analyzeSentimentAction(
   const dictionary = await loadDictionary();
   let score = 0;
 
-  // Simple string matching.
-  // Note: This matches anywhere in the string.
-  // Ideally, one would use a tokenizer (like Kuromoji.js or MeCab) but that requires more setup.
-  // For a basic implementation as requested, we iterate through keys.
-  // OPTIMIZATION: Iterating through a large dictionary for every request is slow.
-  // However, given the constraints and "no tokenizer", checking if `text.includes(word)` for all polarized words is one way.
-  // To make it slightly faster, we can just scan the text? No, Japanese text has no spaces.
-  // We will iterate dictionary keys.
-
   if (!text) {
     return { score: 0, label: "positive" };
   }
 
-  for (const [word, value] of Object.entries(dictionary)) {
-    // If the word is in the text, add its value matches count times?
-    // text.includes(word) is simplest.
-    // Issues: "happy" might be inside "unhappy" (in English). In Japanese less likely to be false positive inverse, but possible.
-    // We will do a simple inclusion check.
+  // OPTIMIZATION: Use Intl.Segmenter to tokenize text and look up words in O(1).
+  // This is significantly faster than iterating the entire dictionary with Regex O(N).
+  const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+  const segments = segmenter.segment(text);
 
-    // Count occurrences
-    const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"); // escape regex chars
-    const matches = text.match(regex);
-    if (matches) {
-      score += value * matches.length;
+  for (const segment of segments) {
+    if (segment.isWordLike) {
+      const word = segment.segment;
+      if (dictionary[word]) {
+        score += dictionary[word];
+      }
     }
   }
 

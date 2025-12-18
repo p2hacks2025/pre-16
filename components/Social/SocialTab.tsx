@@ -14,6 +14,7 @@ import {
   query,
   doc,
   where,
+  limit,
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import {
@@ -142,7 +143,11 @@ export function SocialTab({
   // Subscribe to Firestore in realtime
   useEffect(() => {
     try {
-      let q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+      let q = query(
+        collection(db, "posts"),
+        orderBy("timestamp", "desc"),
+        limit(50)
+      );
 
       if (tab === "solo") {
         if (!user) {
@@ -156,7 +161,8 @@ export function SocialTab({
         q = query(
           collection(db, "posts"),
           where("authorId", "==", user.uid),
-          orderBy("timestamp", "desc")
+          orderBy("timestamp", "desc"),
+          limit(50)
         );
       }
 
