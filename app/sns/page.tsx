@@ -279,7 +279,7 @@ export default function CommunityPage() {
                 exit={{ opacity: 0 }}
                 className="text-white/10 w-full h-full flex flex-col items-center justify-center select-none pb-[280px] absolute inset-0"
               >
-                <div className="text-8xl mb-4 opacity-50 grayscale">🎆</div>
+                <div className="text-8xl mb-4 opacity-50 grayscale">🌋</div>
                 <div className="text-sm tracking-[0.2em] font-light">
                   NO SIGNAL
                 </div>
