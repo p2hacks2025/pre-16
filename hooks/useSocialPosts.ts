@@ -23,18 +23,9 @@ const SEED_POSTS: PostData[] = [
     author: "Hanabi Official",
     avatar: "from-blue-500 to-purple-600",
     content:
-      "Welcome to the Hanabi Community! 🎆\nShare your best fire-breathing moments here.",
+      "Welcome to the HANABI Community! 🎆\nあなたの打ち上げたい思い(花火)をここで共有してください",
     timestamp: Date.now() - 3600000, // 1 hour ago
     likes: 42,
-  },
-  {
-    id: "seed-2",
-    author: "Fire Starter",
-    avatar: "from-green-400 to-emerald-600",
-    content:
-      "This new AR feature is insane! My cat looks like a dragon now. 🐉",
-    timestamp: Date.now() - 7200000, // 2 hours ago
-    likes: 15,
   },
 ];
 
