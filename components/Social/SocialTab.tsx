@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CreatePost } from "./CreatePost";
 import { PostCard, PostData } from "./PostCard";
@@ -52,19 +52,74 @@ export function SocialTab({
     deletePostAssets,
   } = useSocialPosts({ tab, user });
 
-  const [showFireworks, setShowFireworks] = useState(false);
+  const [fireworksQueue, setFireworksQueue] = useState<(string | null)[]>([]);
   const [fireworksSentiment, setFireworksSentiment] = useState<string | null>(
     null
   );
+  const [fireworksTrigger, setFireworksTrigger] = useState(0);
+  const [fireworksProcessing, setFireworksProcessing] = useState(false);
+  const fireworksTimerRef = useRef<number | null>(null);
+  const fireworksQueueTimerRef = useRef<number | null>(null);
+  type FireworksEventDetail = { sentiments?: (string | null)[] };
+  type FireworksCustomEvent = CustomEvent<FireworksEventDetail>;
 
-  // Listen for new post events for fireworks
+  // Enqueue sentiments from new post events
   useEffect(() => {
-    if (newPostEvent) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFireworksSentiment(newPostEvent.sentiment);
-      setShowFireworks(true);
+    if (newPostEvent?.sentiments?.length) {
+      setFireworksQueue((prev) => [...prev, ...newPostEvent.sentiments]);
     }
   }, [newPostEvent]);
+
+  const queueFireworks = useCallback((label: string | null, count = 1) => {
+    if (count <= 0) return;
+    const sentiments = Array.from({ length: count }, () => label);
+    setFireworksQueue((prev) => [...prev, ...sentiments]);
+  }, []);
+
+  // Listen for global fireworks requests (e.g., clicks on pending posts outside this component)
+  useEffect(() => {
+    const handler = (e: FireworksCustomEvent) => {
+      const sentiments = e.detail?.sentiments;
+      if (!sentiments?.length) return;
+      setFireworksQueue((prev) => [...prev, ...sentiments]);
+    };
+    const listener: EventListener = (e) =>
+      handler(e as FireworksCustomEvent);
+    window.addEventListener("hanabi-fireworks", listener);
+    return () => window.removeEventListener("hanabi-fireworks", listener);
+  }, []);
+
+  // Dequeue one sentiment at a time and trigger fireworks
+  useEffect(() => {
+    if (fireworksProcessing) return;
+    if (!fireworksQueue.length) return;
+
+    // Defer state updates out of the effect body to avoid cascading render warnings
+    fireworksQueueTimerRef.current = window.setTimeout(() => {
+      const [next, ...rest] = fireworksQueue;
+      setFireworksSentiment(next ?? null);
+      setFireworksQueue(rest);
+      setFireworksTrigger((prev) => prev + 1);
+      setFireworksProcessing(true);
+
+      const delay = 80 + Math.random() * 120; // quick stagger, but not simultaneous
+      fireworksTimerRef.current = window.setTimeout(() => {
+        setFireworksProcessing(false);
+        fireworksTimerRef.current = null;
+      }, delay);
+    }, 0);
+  }, [fireworksProcessing, fireworksQueue]);
+
+  useEffect(() => {
+    return () => {
+      if (fireworksQueueTimerRef.current) {
+        window.clearTimeout(fireworksQueueTimerRef.current);
+      }
+      if (fireworksTimerRef.current) {
+        window.clearTimeout(fireworksTimerRef.current);
+      }
+    };
+  }, []);
 
   // Clean cleanedRef ... actually this logic is inside the hook now but we used it for one-off deletes.
   // The hook handles the expiration deletes.
@@ -165,11 +220,18 @@ export function SocialTab({
     >
       <div className="w-full relative animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Mobile "Center" Shim - if on mobile, show pending posts here at top */}
-        <div className="lg:hidden mb-6 flex flex-col gap-4">
+        <div
+          className="lg:hidden mb-6 flex flex-col gap-4"
+          data-pending-stack
+        >
           {pendingPosts.map((p) => (
             <div
               key={p.id}
-              className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6"
+              className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6 cursor-pointer"
+              onClick={() => {
+                const count = 3 + Math.floor(Math.random() * 3); // 3-5発
+                queueFireworks(p.sentiment?.label ?? null, count);
+              }}
             >
               <PostCard post={p} onLoginRequired={() => {}} />
             </div>
@@ -226,6 +288,7 @@ export function SocialTab({
           layout
           style={{ overflowAnchor: "none" }}
           className="flex flex-col gap-3 sm:gap-4 pb-24"
+          data-feed-root
         >
           {!ready && (
             <div className="text-white/50 text-xs sm:text-sm">
@@ -285,7 +348,7 @@ export function SocialTab({
           ) : null}
         </DragOverlay>
         <FireworksOverlay
-          isActive={showFireworks}
+          trigger={fireworksTrigger}
           sentimentLabel={fireworksSentiment}
           sound={
             soundEnabled
@@ -296,10 +359,6 @@ export function SocialTab({
                 }
               : { enabled: false }
           }
-          onComplete={() => {
-            setShowFireworks(false);
-            setFireworksSentiment(null);
-          }}
         />
       </div>
     </DndContext>
