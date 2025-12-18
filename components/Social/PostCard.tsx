@@ -105,7 +105,7 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
         postId: post.id,
         sentiment: post.sentiment?.label ?? null,
         timestamp: serverTimestamp(),
-        count: Math.floor(Math.random() * 3) + 3, // 3-5 fireworks
+        count: Math.floor(Math.random() * 3) + 1, // 1-3 fireworks
       });
     } catch (error) {
       console.error("Failed to trigger fireworks:", error);
