@@ -48,8 +48,6 @@ export default function CommunityPage() {
     }
   };
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const stored = localStorage.getItem("hanabi_sound_enabled");
     if (stored === "true") {
