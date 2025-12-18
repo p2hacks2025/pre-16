@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Social/Sidebar";
 
@@ -25,6 +25,17 @@ export default function CommunityPage() {
 
   // Pending posts state for animation in left column (Array)
   const [pendingPosts, setPendingPosts] = useState<PostData[]>([]);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get("tab") === "settings";
@@ -90,6 +101,8 @@ export default function CommunityPage() {
         scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
       }
       setShowCompose((prev) => !prev);
+      // Also scroll to top so user can see the compose form
+      handleScrollTop();
     } else {
       setShowLoginPrompt(true);
     }
@@ -356,6 +369,7 @@ export default function CommunityPage() {
                 showCompose={showCompose}
                 onComposeClick={handleComposeClick}
                 onPendingPostsChange={setPendingPosts}
+                onPostCreated={handleScrollTop}
                 soundEnabled={soundEnabled}
               />
             </div>
