@@ -218,7 +218,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
                   (id) =>
                     fetched.find((p) => p.id === id)?.sentiment?.label ?? null
                 )
-                .filter((v) => v !== undefined);
+                .filter((v) => v != null);
               setNewPostEvent({
                 sentiments,
                 timestamp: Date.now(),
