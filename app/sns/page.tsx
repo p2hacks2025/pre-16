@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Sidebar } from "@/components/Social/Sidebar";
 
 import { SocialTab } from "@/components/Social/SocialTab";
@@ -16,7 +17,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { PostCard, PostData } from "@/components/Social/PostCard";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function CommunityPage() {
+function CommunityContent() {
   const [activeTab, setActiveTab] = useState<"everyone" | "solo">("everyone");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
@@ -43,6 +44,7 @@ export default function CommunityPage() {
   useEffect(() => {
     const stored = localStorage.getItem("hanabi_sound_enabled");
     if (stored === "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSoundEnabled(true);
     } else {
       setSoundEnabled(false);
@@ -59,21 +61,6 @@ export default function CommunityPage() {
       return next;
     });
   };
-
-  const VolumeToggleButton = ({ className = "" }: { className?: string }) => (
-    <button
-      type="button"
-      aria-pressed={soundEnabled}
-      aria-label={soundEnabled ? "音量ON" : "音量OFF"}
-      onClick={(e) => {
-        e.stopPropagation();
-        toggleSound();
-      }}
-      className={`relative inline-flex h-10 w-10 items-center justify-center bg-black/40 text-white transition-colors hover:border-orange-400/70 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${className}`}
-    >
-      {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-    </button>
-  );
 
   // Show loading state while checking auth
   if (loading) {
@@ -166,10 +153,13 @@ export default function CommunityPage() {
             <span className="sr-only">プロフィール設定</span>
             <div className="flex h-full w-full items-center justify-center p-1">
               {profile?.photoURL ? (
-                <img
+                <Image
                   src={profile.photoURL}
                   alt={profile.displayName}
                   className="h-full w-full rounded-full object-cover"
+                  width={48}
+                  height={48}
+                  unoptimized
                 />
               ) : (
                 <div
@@ -292,7 +282,10 @@ export default function CommunityPage() {
               >
                 HANABI
               </Link>
-              <VolumeToggleButton />
+              <VolumeToggleButton
+                soundEnabled={soundEnabled}
+                onToggle={toggleSound}
+              />
             </div>
           </div>
 
@@ -396,3 +389,40 @@ export default function CommunityPage() {
     </div>
   );
 }
+
+export default function CommunityPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black text-white flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <CommunityContent />
+    </Suspense>
+  );
+}
+
+const VolumeToggleButton = ({
+  className = "",
+  soundEnabled,
+  onToggle,
+}: {
+  className?: string;
+  soundEnabled: boolean;
+  onToggle: () => void;
+}) => (
+  <button
+    type="button"
+    aria-pressed={soundEnabled}
+    aria-label={soundEnabled ? "音量ON" : "音量OFF"}
+    onClick={(e) => {
+      e.stopPropagation();
+      onToggle();
+    }}
+    className={`relative inline-flex h-10 w-10 items-center justify-center bg-black/40 text-white transition-colors hover:border-orange-400/70 hover:text-orange-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${className}`}
+  >
+    {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+  </button>
+);

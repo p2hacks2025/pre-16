@@ -61,7 +61,8 @@ export function RealTimeFire() {
         };
       }
     } catch (err: unknown) {
-      console.error(err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.error(err as any);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const e = err as any;
       if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
@@ -69,8 +70,8 @@ export function RealTimeFire() {
           "カメラのアクセスが拒否されました。ブラウザの設定でカメラを許可して、再試行してください。"
         );
       } else if (
-        err.name === "NotFoundError" ||
-        err.name === "DevicesNotFoundError"
+        e.name === "NotFoundError" ||
+        e.name === "DevicesNotFoundError"
       ) {
         setError("カメラが見つかりません。");
       } else {
@@ -82,8 +83,8 @@ export function RealTimeFire() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const videoEl = videoRef.current;
     return () => {
-      const videoEl = videoRef.current;
       if (videoEl && videoEl.srcObject) {
         const stream = videoEl.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());

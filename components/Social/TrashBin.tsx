@@ -14,10 +14,11 @@ export function TrashBin({ dropTrigger, soundEnabled = true }: TrashBinProps) {
   });
   const [smoke, setSmoke] = useState<boolean>(false);
 
-  const playSound = () => {
+  const playSound = React.useCallback(() => {
     if (!soundEnabled) return;
     try {
       const AudioContext =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
 
@@ -59,7 +60,7 @@ export function TrashBin({ dropTrigger, soundEnabled = true }: TrashBinProps) {
     } catch (e) {
       console.error("Audio play failed", e);
     }
-  };
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (dropTrigger && dropTrigger > 0) {
@@ -69,7 +70,7 @@ export function TrashBin({ dropTrigger, soundEnabled = true }: TrashBinProps) {
       const timer = setTimeout(() => setSmoke(false), 2000); // 2s smoke duration
       return () => clearTimeout(timer);
     }
-  }, [dropTrigger]);
+  }, [dropTrigger, playSound]);
 
   return (
     <div

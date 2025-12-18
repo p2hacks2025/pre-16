@@ -14,6 +14,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { UserProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { analyzeSentimentAction } from "@/app/actions/sentiment";
+import Image from "next/image";
 
 interface CreatePostProps {
   onPost: (newPost: PostData) => void;
@@ -158,10 +159,13 @@ export function CreatePost({
     >
       <div className="flex gap-2 sm:gap-4">
         {userPhotoURL ? (
-          <img
+          <Image
             src={userPhotoURL}
             alt="Your avatar"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 object-cover"
+            className="rounded-full flex-shrink-0 object-cover w-10 h-10"
+            width={40}
+            height={40}
+            unoptimized
           />
         ) : (
           <div
@@ -186,10 +190,13 @@ export function CreatePost({
             <div className="relative inline-block mt-2">
               {/* Preview Rendering based on type */}
               {fileObj.type.startsWith("image/") && previewUrl ? (
-                <img
+                <Image
                   src={previewUrl}
                   alt="Preview"
-                  className="h-24 sm:h-32 w-auto rounded-lg border border-white/20 object-cover"
+                  className="rounded-lg border border-white/20 object-cover"
+                  width={128}
+                  height={128}
+                  unoptimized
                 />
               ) : fileObj.type.startsWith("video/") && previewUrl ? (
                 <video

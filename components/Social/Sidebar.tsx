@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { Home, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,21 +19,12 @@ export function Sidebar({
   soundEnabled = false,
   onToggleSound,
 }: SidebarProps) {
-  const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile(user);
+  const { user } = useAuth();
+  const { profile } = useProfile(user);
 
   const navItems = [{ icon: Home, label: "夜空", href: "/sns", active: true }];
 
-  const isLoading = authLoading || profileLoading;
-  const displayName =
-    profile?.displayName ||
-    user?.displayName ||
-    user?.email?.split("@")[0] ||
-    "未ログイン";
-  const userId = profile?.uid || user?.uid || "guest";
-  const avatarGradient =
-    profile?.avatarGradient || "from-orange-400 to-red-600";
-  const avatarUrl = profile?.photoURL || user?.photoURL;
+  // Unused variables removed
 
   return (
     <div className="sticky top-0 h-screen w-[275px] shrink-0 flex flex-col justify-between px-4 py-4 border-r border-white/20 overflow-y-auto hidden lg:flex">
@@ -119,10 +111,13 @@ export function Sidebar({
           className="mb-4 flex items-center gap-3 p-3 rounded-full hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10"
         >
           {profile?.photoURL ? (
-            <img
+            <Image
               src={profile.photoURL}
               alt={profile.displayName}
-              className="w-10 h-10 rounded-full object-cover shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              className="rounded-full object-cover shadow-[0_0_10px_rgba(59,130,246,0.5)] w-10 h-10"
+              width={40}
+              height={40}
+              unoptimized
             />
           ) : (
             <div

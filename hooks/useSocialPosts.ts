@@ -229,7 +229,6 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
               STORAGE_LAST_IDS,
               JSON.stringify(currentIds.slice(0, 50))
             );
-            setLastSavedIds(currentIds.slice(0, 50));
           } catch (err) {
             console.warn("Failed to process localStorage diff", err);
           }

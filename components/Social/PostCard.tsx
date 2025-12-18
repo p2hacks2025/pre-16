@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
@@ -38,7 +39,7 @@ interface PostCardProps {
   onLoginRequired?: () => void;
 }
 
-export function PostCard({ post, onLoginRequired }: PostCardProps) {
+export function PostCard({ post }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -100,7 +101,10 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
 
     try {
       // Add fireworks event to Firestore for real-time sync
-      const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
+
+      const { addDoc, collection, serverTimestamp } = await import(
+        "firebase/firestore"
+      );
       await addDoc(collection(db, "fireworks"), {
         postId: post.id,
         sentiment: post.sentiment?.label ?? null,
@@ -113,16 +117,20 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
   };
 
   return (
-    <div 
+    <div
       onClick={handleCardClick}
-      className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group cursor-pointer active:scale-[0.98]">
+      className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl overflow-visible hover:bg-white/[0.07] transition-all duration-300 relative shadow-lg hover:shadow-orange-500/5 group cursor-pointer active:scale-[0.98]"
+    >
       <div className="p-3 sm:p-4 flex gap-2 sm:gap-4">
         {/* Avatar */}
         {post.photoURL ? (
-          <img
+          <Image
             src={post.photoURL}
             alt={post.author}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 object-cover"
+            className="rounded-full flex-shrink-0 object-cover w-10 h-10"
+            width={40}
+            height={40}
+            unoptimized
           />
         ) : (
           <div
@@ -202,11 +210,13 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           {post.attachment ? (
             <div className="mt-2 sm:mt-3 rounded-lg overflow-hidden border border-white/10">
               {post.attachment.type.startsWith("image/") ? (
-                <img
+                <Image
                   src={post.attachment.url}
                   alt={post.attachment.name}
                   className="w-full h-auto max-h-[300px] sm:max-h-[400px] object-cover"
-                  loading="lazy"
+                  width={500}
+                  height={300}
+                  unoptimized
                 />
               ) : post.attachment.type.startsWith("video/") ? (
                 <video
@@ -256,11 +266,13 @@ export function PostCard({ post, onLoginRequired }: PostCardProps) {
           ) : post.image ? (
             // Legacy Image Support
             <div className="mt-3 rounded-lg overflow-hidden border border-white/10">
-              <img
+              <Image
                 src={post.image}
                 alt="Post content"
                 className="w-full h-auto max-h-[400px] object-cover"
-                loading="lazy"
+                width={500}
+                height={300}
+                unoptimized
               />
             </div>
           ) : null}

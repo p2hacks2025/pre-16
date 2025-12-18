@@ -5,7 +5,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
 import { db } from "@/lib/firebase";
-import { deleteDoc, doc, collection, query, orderBy, limit, onSnapshot, where, Timestamp } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  collection,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+  where,
+  Timestamp,
+} from "firebase/firestore";
 import {
   DndContext,
   DragEndEvent,
@@ -37,7 +47,7 @@ export function SocialTab({
     posts,
     setPosts,
     pendingPosts,
-    setPendingPosts,
+    // setPendingPosts,
     ready,
     newPostEvent,
     deletePostAssets,

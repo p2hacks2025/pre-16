@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { UserProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { Save, User, LogOut, X } from "lucide-react";
@@ -10,17 +11,6 @@ interface ProfileSettingsProps {
   onSave: (updates: Partial<UserProfile>) => Promise<void>;
   onClose?: () => void;
 }
-
-const GRADIENT_OPTIONS = [
-  { name: "Fire", value: "from-orange-500 to-red-600" },
-  { name: "Ocean", value: "from-blue-500 to-cyan-600" },
-  { name: "Forest", value: "from-green-400 to-emerald-600" },
-  { name: "Sunset", value: "from-pink-500 to-purple-600" },
-  { name: "Gold", value: "from-yellow-400 to-orange-500" },
-  { name: "Night", value: "from-indigo-500 to-purple-700" },
-  { name: "Rose", value: "from-rose-400 to-pink-600" },
-  { name: "Electric", value: "from-cyan-400 to-blue-600" },
-];
 
 export function ProfileSettings({
   profile,
@@ -140,10 +130,13 @@ export function ProfileSettings({
           </label>
           <div className="flex items-center gap-4">
             {photoURL ? (
-              <img
+              <Image
                 src={photoURL}
                 alt="Avatar"
-                className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
+                className="rounded-full object-cover border-2 border-white/20 w-16 h-16"
+                width={64}
+                height={64}
+                unoptimized
               />
             ) : (
               <div
@@ -189,10 +182,13 @@ export function ProfileSettings({
           </label>
           <div className="flex items-center gap-4 p-4 bg-white/5 rounded-lg border border-white/10">
             {photoURL ? (
-              <img
+              <Image
                 src={photoURL}
                 alt="Preview"
-                className="w-12 h-12 rounded-full object-cover"
+                className="rounded-full object-cover w-12 h-12"
+                width={48}
+                height={48}
+                unoptimized
               />
             ) : (
               <div
