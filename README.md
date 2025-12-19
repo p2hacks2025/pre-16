@@ -67,7 +67,10 @@ Kj：フロントエンド、バックエンド
 - 事前にWindows11homeにnvmを用いてNode.jsをインストールして、バージョンを揃えた  
 - 一日の最後に褒め合い会を実施して、互いのその日の頑張りを褒め合った  
 - 毎日対面で全員集合することを徹底した  
-- 迷ったときのために、「プロジェクトの指針(https://docs.google.com/document/d/1ySdrOqEB4dRODu6fXeJYCmHa-D2mt5kq8Pl0hfx_ruM/edit?usp=sharing)」を作成していつでも見れるようにした  
+- 迷ったときのために、「プロジェクトの指針
+  (https://docs.google.com/document/d/1ySdrOqEB4dRODu6fXeJYCmHa-D2mt5kq8Pl0hfx_ruM/edit?usp=sharing)
+  」
+  を作成していつでも見れるようにした  
 技術的な工夫：  
 - とんかつ  
 スケジュール管理の工夫：  
