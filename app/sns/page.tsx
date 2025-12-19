@@ -236,19 +236,6 @@ function CommunityContent() {
                     opacity: { duration: 0.3 },
                   }}
                   className="w-full max-w-md"
-                  onClick={() => {
-                    if (typeof window === "undefined") return;
-                    const count = 3 + Math.floor(Math.random() * 3); // 3-5発
-                    const sentiments = Array.from(
-                      { length: count },
-                      () => post.sentiment?.label ?? null
-                    );
-                    window.dispatchEvent(
-                      new CustomEvent("hanabi-fireworks", {
-                        detail: { sentiments },
-                      })
-                    );
-                  }}
                 >
                   {/* Inner wrapper handles the visual animation (10s broadcast sequence) */}
                   <div className="w-full animate-broadcast">

@@ -95,7 +95,7 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
         (snap) => {
           const now = Date.now();
           const fetched: PostData[] = [];
-          const addedIds: string[] = [];
+          const addedSentiments: (string | null)[] = [];
 
           snap.docChanges().forEach((change) => {
             if (change.type === "added") {
@@ -121,26 +121,26 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
                   return;
                 }
 
+                const newPost: PostData = {
+                  id: change.doc.id,
+                  author: data.author ?? "Unknown",
+                  authorId: data.authorId,
+                  avatar: data.avatar ?? "from-orange-500 to-red-600",
+                  photoURL: data.photoURL,
+                  content: data.content ?? "",
+                  image: data.image,
+                  attachment: data.attachment,
+                  sentiment: data.sentiment,
+                  timestamp: ts,
+                  expiresAt,
+                  likes: data.likes ?? 0,
+                  visibility: data.visibility,
+                };
+
+                addedSentiments.push(newPost.sentiment?.label ?? null);
+
                 setPendingPosts((prev) => {
                   if (prev.some((p) => p.id === change.doc.id)) return prev;
-
-                  addedIds.push(change.doc.id);
-
-                  const newPost: PostData = {
-                    id: change.doc.id,
-                    author: data.author ?? "Unknown",
-                    authorId: data.authorId,
-                    avatar: data.avatar ?? "from-orange-500 to-red-600",
-                    photoURL: data.photoURL,
-                    content: data.content ?? "",
-                    image: data.image,
-                    attachment: data.attachment,
-                    sentiment: data.sentiment,
-                    timestamp: ts,
-                    expiresAt,
-                    likes: data.likes ?? 0,
-                    visibility: data.visibility,
-                  };
 
                   // Auto-remove pending after 10s
                   setTimeout(() => {
@@ -211,13 +211,8 @@ export function useSocialPosts({ tab, user }: UseSocialPostsProps) {
 
           // Detect new posts (from docChanges added) to trigger fireworks
           try {
-            if (addedIds.length) {
-              const sentiments = addedIds
-                .map(
-                  (id) =>
-                    fetched.find((p) => p.id === id)?.sentiment?.label ?? null
-                )
-                .filter((v) => v != null);
+            if (addedSentiments.length) {
+              const sentiments = [...addedSentiments];
               setNewPostEvent({
                 sentiments,
                 timestamp: Date.now(),
