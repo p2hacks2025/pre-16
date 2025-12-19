@@ -362,7 +362,7 @@ function CommunityContent() {
               {user && showCompose && (
                 <div className="absolute z-20 bg-black w-[92%] pt-4 sm:pt-6">
                   <CreatePost
-                    onPost={() => {
+                    onPost={(_newPost) => {
                       if (typeof window === "undefined") return;
                       if (!window.matchMedia("(min-width: 1024px)").matches) {
                         setShowCompose(false);
