@@ -2,7 +2,7 @@
 
 ## プロダクト名  
 はなび  
-<img width="2240" height="1403" alt="HANABI_logo_copy" src="https://github.com/user-attachments/assets/8065e2af-efe4-475b-8024-e7a38b655e7d" />
+<img width="2240" alt="HANABI_logo_copy" src="https://github.com/user-attachments/assets/8065e2af-efe4-475b-8024-e7a38b655e7d" />
 
 ## コンセプト
 「ひとりでも楽しい、みんなでならもっと楽しいSNS」
@@ -35,11 +35,11 @@ HANABIが解決する課題：
 
 ## 利用の流れ
 1．HANABIのWebサイトを開く(URL、QRコードなどから)   
-<img width="1207" height="801" alt="image" src="https://github.com/user-attachments/assets/d20add45-34b9-4f1a-a71e-8343ace7fed9" />  
+<img width="1207" alt="image" src="https://github.com/user-attachments/assets/d20add45-34b9-4f1a-a71e-8343ace7fed9" />  
 2．&lt;Login&gt;タブから、GoogleアカウントでSign inする  
-<img width="1207" height="801" alt="image" src="https://github.com/user-attachments/assets/289dbf77-078c-41cb-9fb3-e2f893d065ef" />  
+<img width="1207" alt="image" src="https://github.com/user-attachments/assets/289dbf77-078c-41cb-9fb3-e2f893d065ef" />  
 3．&lt;SNS&gt;タブから、HANABIを起動する  
-<img width="1903" height="1053" alt="image" src="https://github.com/user-attachments/assets/acd77445-d0c5-4594-b2b6-2e1ef3bbee5e" />  
+<img width="1903" alt="image" src="https://github.com/user-attachments/assets/acd77445-d0c5-4594-b2b6-2e1ef3bbee5e" />  
 その後：  
 ・&lt;発火&gt;ボタンを押すと出てくるテキストボックスに「発火したい内容」を入力して、&lt;発火&gt;ボタンを押す or Enterキーを押す（Shift + Enterで改行ができます）  
 ・他ユーザーの投稿をクリックして追い花火を打ち上げる  
@@ -51,7 +51,7 @@ HANABIが解決する課題：
 なぜそのプロダクトはほかのプロダクトより優れているのでしょうか？他のプロダクトにはない特徴は何でしょうか？ほかでもないそのプロダクトによってユーザーはどのような嬉しさを得ますか？
 
 ## スクリーンショット(任意)
-<img width="1895" height="1069" alt="スクリーンショット 2025-12-19 160322" src="https://github.com/user-attachments/assets/dc10a411-8968-49ec-82ff-a15b90be3c0a" />
+<img width="1895" alt="スクリーンショット 2025-12-19 160322" src="https://github.com/user-attachments/assets/dc10a411-8968-49ec-82ff-a15b90be3c0a" />
 
 ## 開発体制
 
@@ -71,8 +71,10 @@ Kj：フロントエンド、バックエンド
   (https://docs.google.com/document/d/1ySdrOqEB4dRODu6fXeJYCmHa-D2mt5kq8Pl0hfx_ruM/edit?usp=sharing)
   」
   を作成していつでも見られるようにした  
+
 技術的な工夫：  
 - とんかつ  
+
 スケジュール管理の工夫：  
 - 評価基準を基に、発表関連のタスクに時間を多く使うようにした。
 - ゴールから逆算してスケジュールを決定し、余裕を持って開発を進めた(日, 火, 水, 木に全員で開発をすることで、)
