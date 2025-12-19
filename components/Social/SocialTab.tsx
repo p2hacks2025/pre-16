@@ -270,10 +270,6 @@ export function SocialTab({
               <div
                 key={p.id}
                 className="animate-in zoom-in-50 fade-in duration-700 border-b border-white/10 pb-6 cursor-pointer"
-                onClick={() => {
-                  const count = 3 + Math.floor(Math.random() * 3); // 3-5発
-                  queueFireworks(p.sentiment?.label ?? null, count);
-                }}
               >
                 <PostCard post={p} onLoginRequired={() => {}} />
               </div>
