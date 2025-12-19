@@ -93,8 +93,7 @@ export function Introduction() {
                   夜空に上がった花火をタップしてみてください。
                   「いいね」を送る代わりに、追加の花火を打ち上げて
                   <strong className="text-yellow-300">「誘爆」</strong>
-                  させることができます。
-                  連打するほど花火は大きくなり、光の連鎖が生まれます。
+                  させることができます。 連打するほど、光の連鎖が生まれます。
                 </p>
               </div>
             </div>
@@ -137,7 +136,7 @@ export function Introduction() {
                   <strong className="text-cyan-300">「水バケツ」</strong>
                   へ放り込んでください。
                   ジュッという音と共に、跡形もなく消滅します。
-                  ログは残りません。残るのは、爽快感だけです。
+                  ログは残りません。あるのは、爽快感だけです。
                 </p>
               </div>
             </div>
