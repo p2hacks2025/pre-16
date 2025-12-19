@@ -12,18 +12,18 @@ export function Introduction() {
         </div>
 
         <h2 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-orange-400 via-red-500 to-purple-600 bg-clip-text text-transparent leading-tight tracking-tight">
-          言葉は、残るから重い。
+          言葉も花火も、
           <br />
           消えるから美しい。
         </h2>
         <p className="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed font-light">
-          ここは、刹那を彩る「デジタル花火大会」会場です。
+          ここは、刹那を彩る「花火大会」。
           <br className="hidden md:block" />
-          HANABIは、誰かの反応を待つためのSNSではありません。
+          HANABIは、誰かの返信を待つためのSNSではありません。
           <br />
           あなたの心にある言葉を、夜空に打ち上げ、
           <br />
-          その輝き自体を楽しむための場所です。
+          その輝きを楽しむための場所です。
         </p>
       </div>
 
@@ -31,24 +31,22 @@ export function Introduction() {
       <div className="w-full bg-gradient-to-br from-white/10 to-white/5 p-8 rounded-3xl border border-white/10 shadow-[0_0_30px_rgba(249,115,22,0.1)] relative overflow-hidden group">
         <div className="relative z-10 text-center space-y-4">
           <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-            <span className="text-3xl">🎆</span> コンセプト：入力＝快感
+            <span className="text-3xl">🎆</span> コンセプト：投稿＝快感
           </h3>
           <p className="text-white/70 leading-relaxed text-lg">
-            「いいね」の数や、既読の有無に疲れていませんか？
+            「いいね」の数や、返信の有無に疲れていませんか？
             <br />
-            ここでは、投稿ボタンを押した瞬間がクライマックスです。
+            ここでは、花火を打ち上げた瞬間がクライマックスです。
             <br />
             あなたの言葉は色鮮やかな花火となり、10秒間だけ夜空を焦がして消えていきます。
           </p>
           <div className="pt-4 text-white/90 font-medium">
-            1人なら、静かな線香花火として。
+            ひとりなら、夜空に咲く儚い一輪花として。
             <br />
-            みんななら、夜空を埋め尽くす大花火として。
+            みんななら、夜空を埋め尽くすスターマインとして。
             <br />
-            <span className="text-orange-300">
-              「つながり」よりも「高揚感」を大切にした
-            </span>
-            、新しいコミュニケーションの形です。
+            <span className="text-orange-300">「高揚感」を大切にした</span>
+            、新しいコミュニケーションの場がここにあります。
           </div>
         </div>
       </div>
@@ -56,7 +54,7 @@ export function Introduction() {
       {/* How to Play Section */}
       <div className="w-full">
         <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
-          <span className="text-yellow-400">✨</span> HANABIの遊び方
+          <span className="text-yellow-400">✨</span> HANABIの特徴
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1 */}
@@ -67,10 +65,10 @@ export function Introduction() {
               </div>
               <div>
                 <h4 className="text-xl font-bold text-white mb-2">
-                  1. 感情を色に変える
+                  1. 感情を彩る
                 </h4>
                 <p className="text-white/60 text-sm leading-relaxed">
-                  あなたの投稿内容は、AIがリアルタイムで分析します。
+                  あなたの投稿内容をリアルタイムで解析します。
                   ポジティブな言葉は情熱的な
                   <strong className="text-red-400">「赤」</strong>へ、
                   悲しみや憂いは静寂の
@@ -92,11 +90,11 @@ export function Introduction() {
                   2. 共鳴と連鎖（タップ＆連打）
                 </h4>
                 <p className="text-white/60 text-sm leading-relaxed">
-                  夜空に上がった花火（他人の投稿）をタップしてみてください。
-                  「いいね」を送る代わりに、追加の火薬を投入して
+                  夜空に上がった花火をタップしてみてください。
+                  「いいね」を送る代わりに、追加の花火を打ち上げて
                   <strong className="text-yellow-300">「誘爆」</strong>
                   させることができます。
-                  連打すればするほど花火は巨大化し、画面全体を巻き込む光の連鎖が生まれます。
+                  連打するほど花火は大きくなり、光の連鎖が生まれます。
                 </p>
               </div>
             </div>
@@ -110,15 +108,15 @@ export function Introduction() {
               </div>
               <div>
                 <h4 className="text-xl font-bold text-white mb-2">
-                  3. 灰が積もれば、奇跡が起きる
+                  3. 優しい花火だけを夜空へ
                 </h4>
                 <p className="text-white/60 text-sm leading-relaxed">
-                  花火が打ち上がるたび、タイムラインには静かに「灰」が降り積もります。
-                  画面が灰で埋め尽くされた時……夜空は限界を迎え、
-                  <strong className="text-white text-shadow-glow">
-                    「スターマイン（大爆発）」
+                  穢れた言葉を目にする必要はありません。ネガティブな投稿はフィルタリングされ、
+                  夜空には美しい言葉だけが輝きます。ポジティブな
+                  <strong className="text-orange-400 text-shadow-glow">
+                    「炎上」
                   </strong>
-                  が巻き起こります。圧倒的なフィナーレを目撃してください。
+                  をお楽しみください。
                 </p>
               </div>
             </div>
@@ -139,7 +137,7 @@ export function Introduction() {
                   <strong className="text-cyan-300">「水バケツ」</strong>
                   へ放り込んでください。
                   ジュッという音と共に、跡形もなく消滅します。
-                  ログは残りません。あるのは、今この瞬間の煌めきと、生成される音楽だけです。
+                  ログは残りません。残るのは、爽快感だけです。
                 </p>
               </div>
             </div>
@@ -150,7 +148,7 @@ export function Introduction() {
       {/* CTA Section */}
       <div className="flex flex-col items-center gap-6 mt-8 py-8 border-t border-white/10 w-full">
         <p className="text-xl text-white/80 font-medium text-center">
-          さあ、導火線に火をつける準備はできましたか？
+          さあ、心の導火線に火をつける準備はできましたか？
           <br />
           <span className="text-orange-400">
             あなたの言葉で、この夜空を焦がしてください。
