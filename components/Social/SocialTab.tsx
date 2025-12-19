@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PostCard, PostData } from "./PostCard";
 import { FireworksOverlay } from "./FireworksOverlay";
@@ -61,7 +61,6 @@ export function SocialTab({
   const [fireworksProcessing, setFireworksProcessing] = useState(false);
   const fireworksTimerRef = useRef<number | null>(null);
   const fireworksQueueTimerRef = useRef<number | null>(null);
-  const fireworksQueueRef = useRef<(string | null)[]>([]);
 
   const [hideNegative, setHideNegative] = useState(false);
 
@@ -145,31 +144,18 @@ export function SocialTab({
     return () => unsubscribe();
   }, [queueFireworks]);
 
-  useEffect(() => {
-    fireworksQueueRef.current = fireworksQueue;
-  }, [fireworksQueue]);
-
   // Dequeue one sentiment at a time and trigger fireworks
   useEffect(() => {
     if (fireworksProcessing) return;
-    if (!fireworksQueueRef.current.length) return;
-    if (fireworksQueueTimerRef.current) return;
+    if (!fireworksQueue.length) return;
 
     // Defer state updates out of the effect body to avoid cascading render warnings
-    setFireworksProcessing(true);
     fireworksQueueTimerRef.current = window.setTimeout(() => {
-      fireworksQueueTimerRef.current = null;
-      if (!fireworksQueueRef.current.length) {
-        setFireworksProcessing(false);
-        return;
-      }
-      const [next, ...rest] = fireworksQueueRef.current;
-      fireworksQueueRef.current = rest;
+      const [next, ...rest] = fireworksQueue;
       setFireworksSentiment(next ?? null);
-      setFireworksQueue((current) =>
-        current.length ? current.slice(1) : current
-      );
+      setFireworksQueue(rest);
       setFireworksTrigger((prev) => prev + 1);
+      setFireworksProcessing(true);
 
       const delay = 80 + Math.random() * 120; // quick stagger, but not simultaneous
       fireworksTimerRef.current = window.setTimeout(() => {
