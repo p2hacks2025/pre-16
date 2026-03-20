@@ -121,3 +121,13 @@ Kj：フロントエンド、バックエンド
 - Gemini
 - PowerPoint
 - Rotato
+
+
+## 本プロダクトで使用している「日本語極性辞書」について
+
+本プロダクトで使用している日本語極性辞書ですが、東北大学 乾・岡崎研究室様が作成したものを使用しました。
+
+著作者表示:
+```
+著作者: 東北大学 乾・岡崎研究室 / Author(s): Inui-Okazaki Laboratory, Tohoku University
+```
